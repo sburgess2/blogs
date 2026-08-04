@@ -1,0 +1,104 @@
+---
+title: "Demystifying ggplot2"
+author: "Sara Burgss"
+date: last-modified
+format: html
+---
+
+Today I was speaking to a PhD student about R and generating plots. She bemoaned/begruzzled/ how she hated R and didn't think she'd ever be able to generate a beautiful plot easily. "It takes me so long, I just can't get my head around it".This blog is for her and for anyone else out there who feels like they'll never get there head around R and ggplot2. This was me a few years ago. I only really started to get my head around R through practice and it wasn't until ChatGPT emerged that I stopped feeling so frustrated using R. However, despite AI being a huge help with coding it still helps to understand the basics and how to build up a plot. It wasn't until I began reading Nicola Rennie's blogs and more recently her ggplot2 book that I really appreciated and understood the intricicies of plot design using ggplot2. It's not just about producing a beautiful plot it's also about generating a plot that's easy for your audience to understand. In this blog I'll walk through how I build up a plot using ggplot2 in R. 
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+#load libraries
+library(tidverse)
+library(gt)
+```
+
+In this example I'll be generating a heatmap using data from ... The first step is to tell R/ggplot2 what data you're using. Here, within the ggplot2 function, I'm telling R to use the dataframe called df, that is going to go on the x axis, .. will go onto the y axis and fill is used to specify that each tile will be coloured by ..  You'll notice when you run this that the plot window pops up, but it's empty. 
+
+```{r}
+#| message: false
+#| warning: false
+
+ggplot2(data = df, aes(x = , y =, fill = ))
+```
+
+To actually generate a plot we need to tell R what type of plot we want to generate. We do this using the geom function. You may notice when you start typing geom_ you'll get a list of options. There are a lot of different geoms! Plus many extensions you can use with ggplot2 (you can find a list here). We're generating a heatmap so we'll use the geom_tile() function. There are other functions that can be used to generate a heatmap that are not part of the ggplot2 package. Check out these blogs if you want to learn more (R graph gallery).
+
+```{r}
+#| message: false
+#| warning: false
+
+ggplot2(data = df, aes(x = , y =, fill = )) +
+    geom_tile()
+```
+
+We now have a basic heatmap. Before we continue lets have a look at some of the aesthetic arguments you can use within the geom_tile() function. You can find out more information on how to use a function and it's argument using ?<name of function> e.g. ?geom_tile. For ggplot2 geoms there are core arguments e.g. mapping, data, and position to name a few. These are always listed but don't always make sense to use with a particular geom. For example, you wouldn't use position (which...) for a geom_tile(). The mapping and data arguments are only used if you are doing something different to the rest of the plot, otherwise these are usually specified in the ggplot2() function. However, sometimes these can be confusing to read. For a geom_tile() function the most interesting arguments are the aesthetic arguments listed below. 
+
+```{r}
+#| message: false
+#| warning: false
+
+aes_notes <- tribble(
+  ~aesthetic, ~description,
+  "x", "Horizontal position of the centre of each tile",
+  "y", "Vertical position of the centre of each tile",
+  "fill", "Interior colour of the tile. In a heatmap this is the aesthetic carrying the value",
+  "colour", "Colour of the tile border. NA by default, so tiles are drawn without an outline",
+  "linewidth", "Thickness of the tile border. Has no visible effect until colour is set",
+  "linetype", "Line style of the border, for example solid or dashed",
+  "alpha", "Opacity of the fill, from 0 (transparent) to 1 (opaque)",
+  "width", "Width of each tile in data units. NA fills the space between neighbouring x values",
+  "height", "Height of each tile in data units. NA fills the space between neighbouring y values",
+  "group", "Which rows are treated as belonging together. Set automatically, rarely changed for tiles"
+)
+
+tibble(
+  aesthetic = GeomTile$aesthetics(),
+  default = map_chr(aesthetic, \(a) {
+    value <- GeomTile$default_aes[[a]]
+    if (is.null(value)) "—" else paste0(rlang::quo_squash(value))
+  }),
+  required = if_else(aesthetic %in% GeomTile$required_aes, "Yes", "–")
+) |>
+  left_join(aes_notes, by = "aesthetic") |>
+  select(aesthetic, description, default, required) |>
+  gt() |>
+  cols_label(
+    aesthetic = "Aesthetic",
+    description = "What it controls",
+    default = "Default",
+    required = "Required"
+  ) |>
+  tab_style(
+    style = cell_text(font = "monospace"),
+    locations = cells_body(columns = c(aesthetic, default))
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels()
+  ) |>
+  cols_align(align = "left", columns = description) |>
+  cols_align(align = "center", columns = c(default, required)) |>
+  tab_options(
+    table.width = pct(100),
+    table.font.size = px(14),
+    data_row.padding = px(6),
+    table.border.top.style = "none"
+  )
+```
+
+Getting the hang of the different arguments is tricky, part of it's practice but also accepting that you will need to look them up (I'm always looking up them up) and asking yourself do you really need to understand every argument. 
+
+For this heatmap we're going to use the ... aesthetics.  The next thing I would add is the axis labels and if it's for a presentation or a blog I would also include a title.
+
+```{r}
+#| message: false
+#| warning: false
+
+ggplot2(data = df, aes(x = , y =, fill = )) +
+    geom_tile()
+```
