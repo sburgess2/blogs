@@ -1,18 +1,25 @@
 ---
 title: "Demystifying ggplot2"
-author: "Sara Burgss"
+author: "Sara Burgess"
 date: last-modified
 format: html
 ---
 
-Today I was speaking to a PhD student about R. Our conversation went something like this (I don't remember our conversation word for word):
-"I hate R" 
-"Is it the modelling part you don't like?
-"All of it, R and I just don't see eye to eye"
-"What about generating plots in R using ggplot2?"
-"No, that takes me forever, particularly adding in colours. I'd love to be able to generate beautiful plots"
-"It's quite fiddly using getting the hang of all the different options that you can add into the them function to format a ggplot2 generated plot"
-and generating plots. She bemoaned/begruzzled/ how she hated R and didn't think she'd ever be able to generate a beautiful plot easily. "It takes me so long, I just can't get my head around it".This blog is for her and for anyone else out there who feels like they'll never get there head around R and ggplot2. This was me a few years ago. I only really started to get my head around R through practice and it wasn't until ChatGPT emerged that I stopped feeling so frustrated using R. However, despite AI being a huge help with coding it still helps to understand the basics and how to build up a plot. It wasn't until I began reading Nicola Rennie's blogs and more recently her ggplot2 book that I really appreciated and understood the intricicies of plot design using ggplot2. It's not just about producing a beautiful plot it's also about generating a plot that's easy for your audience to understand. In this blog I'll walk through how I build up a plot using ggplot2 in R. 
+Recently I was speaking to a PhD student about R. Our conversation went something like this (I'm paraphrasing):
+
+> "I hate R."
+>
+> "Is it the modelling part you don't like?"
+>
+> "All of it. R and I just don't see eye to eye."
+>
+> "What about generating plots in R using ggplot2?"
+>
+> "No, that takes so long, particularly adding in colours. I'd love to be able to generate beautiful plots."
+>
+> "It's quite fiddly getting the hang of all the different options you can add into the theme function to format a ggplot2 plot."
+
+Hopefully you get the idea that she really doesn't like R. I felt for her, as writing up a PhD is hard enough without adding something else on top. This blog is for her, and for anyone else out there who feels like they'll never get their head around R and ggplot2. This was me a few years ago. I used to get frustrated with R and thought I'd never get the hang of it. I only started to get my head around it through practice, and it wasn't until ChatGPT emerged that I stopped feeling so frustrated. However, despite AI being a huge help with coding, it still helps to understand the basics and how to build up a plot. It wasn't until I began reading Nicola Rennie's blogs that I really appreciated the intricacies of plot design using ggplot2. It's not just about producing a beautiful plot; it's also about generating one that's easy for your audience to understand. In this blog I'll walk through how I build up a plot using ggplot2 in R.
 
 ```{r}
 #| echo: false
@@ -20,30 +27,50 @@ and generating plots. She bemoaned/begruzzled/ how she hated R and didn't think 
 #| warning: false
 
 #load libraries
-library(tidverse)
+library(tidyverse)
 library(gt)
 ```
 
-In this example I'll be generating a heatmap using data from ... The first step is to tell R/ggplot2 what data you're using. Here, within the ggplot2 function, I'm telling R to use the dataframe called df, that is going to go on the x axis, .. will go onto the y axis and fill is used to specify that each tile will be coloured by ..  You'll notice when you run this that the plot window pops up, but it's empty. 
+In this example we'll be generating a heatmap using a simulated dataset. It gives the number of contigs carrying each antimicrobial resistance gene, broken down by bacterial family. The numbers are made up, but the gene and family names are real, and which genes turn up in which families follows what you'd expect biologically. Load the data from here:
 
 ```{r}
 #| message: false
 #| warning: false
 
-ggplot2(data = df, aes(x = , y =, fill = ))
+#Add in github link to read in data
 ```
 
-To actually generate a plot we need to tell R what type of plot we want to generate. We do this using the geom function. You may notice when you start typing geom_ you'll get a list of options. There are a lot of different geoms! Plus many extensions you can use with ggplot2 (you can find a list here). We're generating a heatmap so we'll use the geom_tile() function. There are other functions that can be used to generate a heatmap that are not part of the ggplot2 package. Check out these blogs if you want to learn more (R graph gallery).
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+df <- read_csv("data/arg_contigs.csv")
+```
+
+The first step is to tell R/ggplot2 what data you're using. Here, within the `ggplot()` function, we're telling R to use the data frame called `df`, that `gene` goes on the x-axis, `family` goes on the y-axis, and that `fill` specifies each tile will be coloured by `n_contigs`. When you run this you'll see the plot panel with the axes drawn but no data plotted.
 
 ```{r}
 #| message: false
 #| warning: false
 
-ggplot2(data = df, aes(x = , y =, fill = )) +
+ggplot(data = df, aes(x = gene, y = family, fill = n_contigs))
+```
+
+To actually draw the data we need to tell R what type of plot we want. We do this by adding a geom layer with `+`. There isn't a single geom function but a whole family of them, all starting `geom_`, and if you start typing that in your editor you'll get a list of options. There are a lot of different geoms, plus many extensions you can use with ggplot2 (you can find a list here). We're generating a heatmap, so we'll use `geom_tile()`. Other packages provide their own heatmap functions too. Check out these blogs if you want to learn more (R graph gallery).
+
+```{r}
+#| message: false
+#| warning: false
+
+ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
     geom_tile()
 ```
 
-We now have a basic heatmap. Before we continue lets have a look at some of the aesthetic arguments you can use within the geom_tile() function. You can find out more information on how to use a function and it's argument using ?<name of function> e.g. ?geom_tile. For ggplot2 geoms there are core arguments e.g. mapping, data, and position to name a few. These are always listed but don't always make sense to use with a particular geom. For example, you wouldn't use position (which...) for a geom_tile(). The mapping and data arguments are only used if you are doing something different to the rest of the plot, otherwise these are usually specified in the ggplot2() function. However, sometimes these can be confusing to read. For a geom_tile() function the most interesting arguments are the aesthetic arguments listed below. 
+We now have a basic heatmap. Before we continue, let's have a look at some of the aesthetics you can use within `geom_tile()`. You can find out more about how to use a function and its arguments by typing `?` followed by the function name, for example `?geom_tile`.
+
+Every geom shares the same set of core arguments — `mapping`, `data`, `stat`, `position` and a few others. These are always listed in the help file, but they don't always make sense for a particular geom. For example, `position` controls how overlapping shapes are arranged, which matters for bars but not for tiles, since tiles sit at fixed positions. The `mapping` and `data` arguments are only needed if a layer is doing something different from the rest of the plot; otherwise they're specified once in `ggplot()`.
+
+What you're usually reaching for with `geom_tile()` isn't in that list at all. Aesthetics like `fill` and `colour` are passed through `...`, so they don't appear as named arguments, which is exactly why the help file can be confusing to read. Those are listed below.
 
 ```{r}
 #| message: false
@@ -98,7 +125,7 @@ tibble(
   )
 ```
 
-Getting the hang of the different arguments is tricky, part of it's practice but also accepting that you will need to look them up (I'm always looking up them up). Perhaps also acknowledging that in this day and age of AI you don't need to understand every line of code especiallly if coding isn't your thing and asking yourself do you really need to understand every argument. 
+Getting the hang of the different arguments is tricky. Part of it is practice, but part of it is accepting that you will need to look them up — I always do. It's also worth asking yourself whether you really need to understand every argument. In this day and age of AI you don't need to understand every line of code, especially if coding isn't your thing.
 
 For this heatmap we're going to use the colour and linewidth aesthetics.  
 
@@ -106,13 +133,13 @@ For this heatmap we're going to use the colour and linewidth aesthetics.
 #| message: false
 #| warning: false
 
-p <- ggplot2(data = df, aes(x = , y =, fill = )) +
+p <- ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
     geom_tile(colour = "white", linewidth = 2)
 
-
+p
 ```
 
-We're now going to add layers to the plot. First, I would axis and legend labels. That's all you need if it's for a publication but if it's for a presentation or a blog I would also include a title and possibly a subtitle.
+We're now going to add layers to the plot. First, we'll add axis and legend labels. That's all you need if it's for a publication, but if it's for a presentation or a blog I would also include a title and possibly a subtitle.
 
 ```{r}
 #| message: false
@@ -124,23 +151,21 @@ p_labels <- p +
         fill = "Number of contigs"
     )
 
-p
+p_labels
 ```
 
-You'll find many figures in publications finish there using the default formatting settings. However, to make your plot eye catching and easy to read choose colours wisely and declutter. 
+Many figures in publications stop there, using the default formatting settings. However, to make your plot eye-catching and easy to read, choose colours wisely and declutter.
 
-Lets change the colour palette to a palette that makes it easier to distinguish between the low and high values. Colour can be added by using a ??? colour palette or you can make your own custom palette. The R colour palette picker (add link) ?? has a huge variety of palettes you can choose from. If you find that list a bit overwhelming to look through I'd recommend starting with the viridis palette set or the brewer colour palettes. For this example I'll use the brewer palette. 
+Let's change the colour palette to one that makes it easier to distinguish between the low and high values. You can either use a ready-made palette or build your own. The R colour palette picker (add link) has a huge variety to choose from. If you find that list a bit overwhelming to look through, I'd recommend starting with the viridis palettes or the ColorBrewer palettes. For this example I'll use a ColorBrewer palette.
+
+One thing to watch here: our tiles are coloured using `fill`, so we need a `scale_fill_*` function rather than `scale_colour_*`. Because `n_contigs` is a continuous variable we also need `scale_fill_distiller()`, which interpolates a ColorBrewer palette across a continuous range. `scale_fill_brewer()` looks like the obvious choice, but it only works with discrete variables.
 
 ```{r}
 #| message: false
 #| warning: false
 
-p_colour <- p +
-    labs(x = "Antimicrobial resistance gene",
-        y = "Family",
-        fill = "Number of contigs"
-    ) +
-        scale_color_brewer(YlGnBu)
+p_colour <- p_labels +
+    scale_fill_distiller(palette = "YlGnBu", direction = 1)
 
 p_colour
 ```
