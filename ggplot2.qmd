@@ -5,7 +5,14 @@ date: last-modified
 format: html
 ---
 
-Today I was speaking to a PhD student about R and generating plots. She bemoaned/begruzzled/ how she hated R and didn't think she'd ever be able to generate a beautiful plot easily. "It takes me so long, I just can't get my head around it".This blog is for her and for anyone else out there who feels like they'll never get there head around R and ggplot2. This was me a few years ago. I only really started to get my head around R through practice and it wasn't until ChatGPT emerged that I stopped feeling so frustrated using R. However, despite AI being a huge help with coding it still helps to understand the basics and how to build up a plot. It wasn't until I began reading Nicola Rennie's blogs and more recently her ggplot2 book that I really appreciated and understood the intricicies of plot design using ggplot2. It's not just about producing a beautiful plot it's also about generating a plot that's easy for your audience to understand. In this blog I'll walk through how I build up a plot using ggplot2 in R. 
+Today I was speaking to a PhD student about R. Our conversation went something like this (I don't remember our conversation word for word):
+"I hate R" 
+"Is it the modelling part you don't like?
+"All of it, R and I just don't see eye to eye"
+"What about generating plots in R using ggplot2?"
+"No, that takes me forever, particularly adding in colours. I'd love to be able to generate beautiful plots"
+"It's quite fiddly using getting the hang of all the different options that you can add into the them function to format a ggplot2 generated plot"
+and generating plots. She bemoaned/begruzzled/ how she hated R and didn't think she'd ever be able to generate a beautiful plot easily. "It takes me so long, I just can't get my head around it".This blog is for her and for anyone else out there who feels like they'll never get there head around R and ggplot2. This was me a few years ago. I only really started to get my head around R through practice and it wasn't until ChatGPT emerged that I stopped feeling so frustrated using R. However, despite AI being a huge help with coding it still helps to understand the basics and how to build up a plot. It wasn't until I began reading Nicola Rennie's blogs and more recently her ggplot2 book that I really appreciated and understood the intricicies of plot design using ggplot2. It's not just about producing a beautiful plot it's also about generating a plot that's easy for your audience to understand. In this blog I'll walk through how I build up a plot using ggplot2 in R. 
 
 ```{r}
 #| echo: false
@@ -91,14 +98,52 @@ tibble(
   )
 ```
 
-Getting the hang of the different arguments is tricky, part of it's practice but also accepting that you will need to look them up (I'm always looking up them up) and asking yourself do you really need to understand every argument. 
+Getting the hang of the different arguments is tricky, part of it's practice but also accepting that you will need to look them up (I'm always looking up them up). Perhaps also acknowledging that in this day and age of AI you don't need to understand every line of code especiallly if coding isn't your thing and asking yourself do you really need to understand every argument. 
 
-For this heatmap we're going to use the ... aesthetics.  The next thing I would add is the axis labels and if it's for a presentation or a blog I would also include a title.
+For this heatmap we're going to use the colour and linewidth aesthetics.  
 
 ```{r}
 #| message: false
 #| warning: false
 
-ggplot2(data = df, aes(x = , y =, fill = )) +
-    geom_tile()
+p <- ggplot2(data = df, aes(x = , y =, fill = )) +
+    geom_tile(colour = "white", linewidth = 2)
+
+
 ```
+
+We're now going to add layers to the plot. First, I would axis and legend labels. That's all you need if it's for a publication but if it's for a presentation or a blog I would also include a title and possibly a subtitle.
+
+```{r}
+#| message: false
+#| warning: false
+
+p_labels <- p +
+    labs(x = "Antimicrobial resistance gene",
+        y = "Family",
+        fill = "Number of contigs"
+    )
+
+p
+```
+
+You'll find many figures in publications finish there using the default formatting settings. However, to make your plot eye catching and easy to read choose colours wisely and declutter. 
+
+Lets change the colour palette to a palette that makes it easier to distinguish between the low and high values. Colour can be added by using a ??? colour palette or you can make your own custom palette. The R colour palette picker (add link) ?? has a huge variety of palettes you can choose from. If you find that list a bit overwhelming to look through I'd recommend starting with the viridis palette set or the brewer colour palettes. For this example I'll use the brewer palette. 
+
+```{r}
+#| message: false
+#| warning: false
+
+p_colour <- p +
+    labs(x = "Antimicrobial resistance gene",
+        y = "Family",
+        fill = "Number of contigs"
+    ) +
+        scale_color_brewer(YlGnBu)
+
+p_colour
+```
+
+
+Note to self to add in Nicola Rennie's new package.
