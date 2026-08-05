@@ -7,19 +7,19 @@ format: html
 
 Recently I was speaking to a PhD student about R. Our conversation went something like this (I'm paraphrasing):
 
-> "I hate R."
+> Student: "I hate R."
 >
-> "Is it the modelling part you don't like?"
+> Me: "Is it the modelling part you don't like?"
 >
-> "All of it. R and I just don't see eye to eye."
+> Student: "All of it. R and I just don't see eye to eye."
 >
-> "What about generating plots in R using ggplot2?"
+> Me: "What about generating plots in R using ggplot2?"
 >
-> "No, that takes so long, particularly adding in colours. I'd love to be able to generate beautiful plots."
+> Student: "No, that takes so long, particularly adding in colours. I'd love to be able to generate beautiful plots."
 >
-> "It's quite fiddly getting the hang of all the different options you can add into the theme function to format a ggplot2 plot."
+> Me: "It took me quite a while to understand how to use a custom palette and it's also quite fiddly getting the hang of all the different options you can add into the theme function to format a ggplot2 plot."
 
-Hopefully you get the idea that she really doesn't like R. I felt for her, as writing up a PhD is hard enough without adding something else on top. This blog is for her, and for anyone else out there who feels like they'll never get their head around R and ggplot2. This was me a few years ago. I used to get frustrated with R and thought I'd never get the hang of it. I only started to get my head around it through practice, and it wasn't until ChatGPT emerged that I stopped feeling so frustrated. However, despite AI being a huge help with coding, it still helps to understand the basics and how to build up a plot. It wasn't until I began reading Nicola Rennie's blogs that I really appreciated the intricacies of plot design using ggplot2. It's not just about producing a beautiful plot; it's also about generating one that's easy for your audience to understand. In this blog I'll walk through how I build up a plot using ggplot2 in R.
+Hopefully you get the idea that she really doesn't like R. I felt for her, as writing up a PhD is hard enough without adding something else on top. This blog is for her, and for anyone else out there who feels like they'll never get their head around R and ggplot2. This was me a few years ago. I used to get frustrated with R and thought I'd never get the hang of it. I only started to get my head around it through practice, and it wasn't until ChatGPT emerged that I stopped feeling so frustrated. However, despite AI being a huge help with coding, it still helps to understand the basics and how to build up a plot. It wasn't until I began reading Nicola Rennie's blogs that I really appreciated the intricacies of plot design using ggplot2. It's not just about producing a beautiful plot; it's also about generating one that's easy for your audience to understand. In this blog I'll walk through how I build up a plot using ggplot2.
 
 ```{r}
 #| echo: false
@@ -29,6 +29,7 @@ Hopefully you get the idea that she really doesn't like R. I felt for her, as wr
 #load libraries
 library(tidyverse)
 library(gt)
+library(ggtext)
 ```
 
 In this example we'll be generating a heatmap using a simulated dataset. It gives the number of contigs carrying each antimicrobial resistance gene, broken down by bacterial family. The numbers are made up, but the gene and family names are real, and which genes turn up in which families follows what you'd expect biologically. Load the data from here:
@@ -125,7 +126,7 @@ tibble(
   )
 ```
 
-Getting the hang of the different arguments is tricky. Part of it is practice, but part of it is accepting that you will need to look them up — I always do. It's also worth asking yourself whether you really need to understand every argument. In this day and age of AI you don't need to understand every line of code, especially if coding isn't your thing.
+Getting the hang of the different arguments is tricky. Part of it is practice, but part of it is accepting that you will need to look them up — I always do. Ask yourself whether you really need to understand every argument. In this day and age of AI you don't need to understand every line of code, especially if coding isn't your thing.
 
 For this heatmap we're going to use the colour and linewidth aesthetics.  
 
@@ -170,5 +171,215 @@ p_colour <- p_labels +
 p_colour
 ```
 
+ColorBrewer and viridis cover most situations, but sooner or later you'll want colours that aren't in either, usually because a client has brand colours or because the plot has to sit alongside others in a report. For a continuous variable, `scale_fill_gradient()` takes a low colour and a high colour and works out everything in between.
 
-Note to self to add in Nicola Rennie's new package.
+```{r}
+#| message: false
+#| warning: false
+
+p_custom <- p_labels +
+    scale_fill_gradient(low = "#F7FBFF", high = "#08306B")
+
+p_custom
+
+custom_colors <- c(
+        "Mobilisation" = "#EDD746FF",      
+        "Other" = "#00496FFF",         
+        "Antimicrobial resistance" = "#DD4124FF", 
+        "Hypothetical protein" = "#B3B7B8FF")
+```
+
+The thing I'd pay attention to when choosing those two colours is lightness. If your low and high colours are similar in lightness, the tiles will look different from each other but a reader won't be able to tell which is bigger, and the whole thing collapses if it's printed in greyscale or read by someone with colour vision deficiency. Squinting at it works surprisingly well as a test.
+
+If you want a midpoint colour as well, `scale_fill_gradient2()` gives you low, mid and high, which is useful for anything diverging around zero. `scale_fill_gradientn()` takes as many colours as you care to hand it.
+
+Custom palettes for categorical fills work differently. There's no interpolation to do, so you give `scale_fill_manual()` one colour per category. Naming the values means you don't have to worry about the order they come out in:
+
+```{r}
+#| message: false
+#| warning: false
+
+df_banded <- df |>
+    mutate(
+        band = cut(
+            n_contigs,
+            breaks = c(-1, 0, 3, 6, 10),
+            labels = c("None", "Low", "Medium", "High")
+        )
+    )
+
+ggplot(df_banded, aes(x = gene, y = family, fill = band)) +
+    geom_tile(colour = "white", linewidth = 2) +
+    scale_fill_manual(
+        values = c(
+            "None" = "#F0F0F0",
+            "Low" = "#BDD7E7",
+            "Medium" = "#6BAED6",
+            "High" = "#08519C"
+        )
+    )
+```
+
+Banding a continuous variable like this throws away detail, so I wouldn't do it by default. It earns its place when the message is which band a tile falls into and the exact count adds nothing.
+
+The grey panel background is a ggplot2 default that I almost always remove. `theme_minimal()` does it in one line.
+
+```{r}
+#| message: false
+#| warning: false
+
+p_theme <- p_custom + theme_minimal()
+
+p_theme
+```
+
+You'll see the gridlines survive, and on a heatmap they're pointless because the tiles sit on top of them. We'll clear those out shortly. `theme_bw()`, `theme_light()` and `theme_classic()` are worth a look too, and all of them take a `base_size` argument that scales every piece of text at once, which is handy when a plot is going into slides.
+
+Now the y-axis title. "Family" is currently rotated through 90 degrees and sitting halfway down the left-hand side, which asks readers to tilt their head to read one word. I'd rather have it horizontal and above the labels it belongs to.
+
+No argument in ggplot2 moves an axis title up there, so the trick is to stop using the axis title and borrow the subtitle slot instead.
+
+```{r}
+#| message: false
+#| warning: false
+
+p_axis <- p_theme +
+    labs(
+        y = NULL,
+        subtitle = "Family"
+    )
+
+p_axis
+```
+
+Setting `y = NULL` removes the axis title and the subtitle appears top left. Pair it with `plot.title.position = "plot"` in the theme, which aligns the title and subtitle to the left edge of the whole plot instead of the panel, so the subtitle lines up over the family names.
+
+One thing to know: with the legend at the top, the subtitle sits above the legend, so there's a gap between "Family" and the labels underneath it. If that bothers you, `plot.tag` positions text by coordinates instead. Setting `plot.tag.position = c(0, 0.78)` puts the label at the left edge, 78% of the way up, and you can nudge that number until it sits where you want.
+
+Everything left is `theme()`. This is the function my PhD student was complaining about, and she's right that it's fiddly — there are over a hundred arguments and they're all named after the thing they control, which only helps once you know what the things are called.
+
+Before the theme itself I set the colours and fonts as objects at the top. It means changing the whole look of the plot is a single edit instead of fifteen, and if you're making a set of plots for the same report they'll match.
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-width: 12
+#| fig-height: 7
+
+bg_col <- "#FFFFFF"
+title_col <- "#0D0D0D"
+text_col <- "#1A1A1A"
+label_col <- "#4D4D4D"
+font <- "sans"
+brand_font <- "sans"
+
+p_final <- p_custom +
+    theme_minimal(base_size = 12) +
+    labs(
+        title = "Gram-positive and Gram-negative families carry almost entirely separate resistance genes",
+        subtitle = "Family",
+        x = "Antimicrobial resistance gene",
+        y = NULL,
+        fill = "Number of contigs",
+        caption = "Simulated data. Gene and family names are real, the counts are not."
+    ) +
+    theme(
+        legend.position = "top",
+        legend.justification = "left",
+        legend.location = "plot",
+        legend.direction = "horizontal",
+        legend.title = element_text(color = text_col, family = font),
+        legend.text = element_text(color = label_col, family = font),
+        plot.title.position = "plot",
+        plot.caption.position = "plot",
+        plot.margin = margin(10, 10, 10, 10),
+        plot.title = element_textbox_simple(
+            color = title_col,
+            family = font,
+            size = rel(1.2),
+            margin = margin(b = 5)
+        ),
+        plot.subtitle = element_textbox_simple(
+            color = text_col,
+            family = font,
+            margin = margin(t = 5, b = 5)
+        ),
+        plot.caption = element_textbox_simple(
+            color = label_col,
+            hjust = 0,
+            family = brand_font,
+            margin = margin(t = 10)
+        ),
+        axis.text = element_text(color = label_col, family = font, size = rel(0.8)),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid = element_blank(),
+        panel.background = element_rect(fill = bg_col, color = bg_col),
+        plot.background = element_rect(fill = bg_col, color = bg_col),
+        axis.ticks = element_blank()
+    )
+
+p_final
+```
+
+Working through what's in there.
+
+The legend arguments put the key at the top, left aligned and horizontal. `legend.location = "plot"` aligns it to the plot edge to match `plot.title.position`, so the title, subtitle and legend all start on the same vertical line. A horizontal legend along the top suits a wide heatmap because it doesn't eat width the tiles could be using.
+
+`panel.grid = element_blank()` and `axis.ticks = element_blank()` remove marks a heatmap doesn't need. The tiles already show you where everything is.
+
+`element_textbox_simple()` comes from the ggtext package. What it gives you over `element_text()` is automatic text wrapping, which matters for the title here because it's a full sentence and it has to break somewhere sensible when the plot gets narrower.
+
+`plot.title.position` and `plot.caption.position` do the same job at opposite ends of the plot, pushing text out to the edge rather than lining it up with the panel.
+
+`axis.text.x` is angled at 45 degrees. Twenty gene names across the bottom won't fit horizontally at any sensible width, and angled labels are easier to read than vertical ones.
+
+`panel.spacing.x` controls the gap between facets, so it does nothing on this plot because there aren't any. It lives in my template and I leave it there for the plots that do need it.
+
+The title is doing real work. Something like "Heatmap of resistance genes by family" tells readers what they can already see. Stating the finding means someone skimming past gets it without decoding the tiles first. The caption is doing a smaller job, making it obvious the numbers are invented so nobody quotes them at me later.
+
+One last thing, and it's what took me longest to work out. The plot in the plot pane is drawn at whatever size the pane happens to be. Drag the pane wider and the text gets relatively smaller, make it narrower and your labels start colliding. You end up tuning text sizes against a moving target.
+
+In a Quarto document, set the size in the chunk options. This is what gets used when the document renders, so it's the one that decides your final output:
+
+```
+#| fig-width: 12
+#| fig-height: 7
+```
+
+For a file, `ggsave()` takes the dimensions explicitly:
+
+```{r}
+#| eval: false
+
+ggsave(
+    "output/arg_heatmap.png",
+    p_final,
+    width = 12,
+    height = 7,
+    dpi = 300,
+    bg = bg_col
+)
+```
+
+For interactive work, the camcorder package is the one I'd recommend. `gg_record()` sets a fixed canvas, and from then on every plot you draw is rendered at those exact dimensions and shown in the viewer:
+
+```{r}
+#| eval: false
+
+library(camcorder)
+
+gg_record(
+    dir = "output/recording",
+    device = "png",
+    width = 12,
+    height = 7,
+    units = "in",
+    dpi = 300
+)
+```
+
+`gg_resize_film(width = 10, height = 8)` changes the canvas without restarting. It also saves every version it draws, so you end up with a record of how the plot developed, which is more useful than it sounds on the days you want to go back two steps.
+
+That's the plot. Most of those lines were theme arguments with nothing to do with the data, which is what I'd want my PhD student to take away. Getting a plot on screen takes one line. The formatting afterwards is where the afternoon goes.
+
+Note to self to add in Nicola Rennie's [ADD: which package?].
