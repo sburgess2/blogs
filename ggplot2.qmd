@@ -50,7 +50,7 @@ head(df)
 #| echo: false
 #| message: false
 #| warning: false
-df <- read_csv("data/arg_contigs.csv")
+df <- read_csv("2026/2026-08-05-demystifying-ggplot2/data/arg_contigs.csv")
 ```
 
 The first step is to tell R/ggplot2 what data you're using. Here, within the `ggplot()` function, we're telling R to use the data frame called `df`, that `gene` goes on the x-axis, `family` goes on the y-axis, and that `fill` specifies each tile will be coloured by `n_contigs`. When you run this you'll see the plot panel with the axes drawn but no data plotted.
@@ -72,57 +72,40 @@ ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
     geom_tile()
 ```
 
-We now have a basic heatmap. Before we continue, let's have a look at some of the aesthetics you can use within `geom_tile()`. You can find out more about how to use a function and its arguments by typing `?` followed by the function name, for example `?geom_tile`.
+We now have a basic heatmap. Before we continue, let's have a look at some of the aesthetics you can use within `geom_tile()`. You can find out more about how to use a function and its arguments by typing `?` followed by the function name, for example `?geom_tile`. Sometimes these help files can be tricky to follow.
 
-Generally, ggplot2 geoms share the same set of core arguments e.g. `mapping`, `data`, `show.legend`, `inherit.aes` and a few others. These are always listed in the help file, but I don't think they always make sense. The `mapping` and `data` arguments are only needed if a layer is doing something different from the rest of the plot; otherwise they're specified once in `ggplot()`. Generally for a geom_tile() you won't need to change the defaults. However, you may want to use \`inherit.aes = FALSE\` if you don't want to inherit the plot data fromggplot2 or use show.legend = FALSE if you do not want a legend.
+Generally, ggplot2 geoms share the same set of core arguments e.g. `mapping`, `data`, `show.legend`, `inherit.aes` and a few others. These are always listed in the help file (but I don't think they always make sense). The `mapping` and `data` arguments are only needed if a layer is doing something different from the rest of the plot; otherwise they're specified once in `ggplot()`. Generally for a `geom_tile()` you won't need to change the defaults. However, you may want to use `inherit.aes = FALSE` if you don't want to inherit the plot data from `ggplot()` or use `show.legend = FALSE` if you do not want a legend.
 
-The things that you may want to changed in `geom_tile()` are passed through `...`, so they don't appear as named arguments, which is also why the help file can be confusing to read. For example, aesthetics like `fill` and `colour` . These are listed below.
+The things that you you are more likely to want to change in `geom_tile()` are passed through `...`, so they don't appear as named arguments, which is also why the help file can be confusing to read. For example, aesthetics like `fill` and `colour`. These are listed below.
 
 ```{r}
 #| message: false
 #| warning: false
+#| echo: false
 
-aes_notes <- tribble(
+tribble(
   ~aesthetic, ~description,
-  "x", "Horizontal position of the centre of each tile",
-  "y", "Vertical position of the centre of each tile",
   "fill", "Interior colour of the tile. In a heatmap this is the aesthetic carrying the value",
   "colour", "Colour of the tile border. NA by default, so tiles are drawn without an outline",
   "linewidth", "Thickness of the tile border. Has no visible effect until colour is set",
   "linetype", "Line style of the border, for example solid or dashed",
   "alpha", "Opacity of the fill, from 0 (transparent) to 1 (opaque)",
-  "width", "Width of each tile in data units. NA fills the space between neighbouring x values",
-  "height", "Height of each tile in data units. NA fills the space between neighbouring y values",
-  "group", "Which rows are treated as belonging together. Set automatically, rarely changed for tiles"
-)
-
-tibble(
-  aesthetic = GeomTile$aesthetics(),
-  default = map_chr(aesthetic, \(a) {
-    value <- GeomTile$default_aes[[a]]
-    if (is.null(value)) "—" else paste0(rlang::quo_squash(value))
-  }),
-  required = if_else(aesthetic %in% GeomTile$required_aes, "Yes", "–")
-) |>
-  left_join(aes_notes, by = "aesthetic") |>
-  select(aesthetic, description, default, required) |>
-  gt() |>
+  "width", "Width of each tile",
+  "height", "Height of each tile") |>
+     gt() |>
   cols_label(
     aesthetic = "Aesthetic",
-    description = "What it controls",
-    default = "Default",
-    required = "Required"
+    description = "Description"
   ) |>
-  tab_style(
-    style = cell_text(font = "monospace"),
-    locations = cells_body(columns = c(aesthetic, default))
-  ) |>
+  #tab_style(
+   # style = cell_text(font = "monospace"),
+    #locations = cells_body(columns = c(aesthetic, #description))
+  #) |>
   tab_style(
     style = cell_text(weight = "bold"),
     locations = cells_column_labels()
   ) |>
-  cols_align(align = "left", columns = description) |>
-  cols_align(align = "center", columns = c(default, required)) |>
+  cols_align(align = "left", columns = description) |> 
   tab_options(
     table.width = pct(100),
     table.font.size = px(14),
@@ -131,21 +114,21 @@ tibble(
   )
 ```
 
-Getting the hang of the different arguments is tricky. Part of it is practice, but part of it is accepting that you will need to look them up — I always do. Ask yourself whether you really need to understand every argument. In this day and age of AI you don't need to understand every line of code, especially if coding isn't your thing.
+Getting the hang of the different arguments is tricky. Part of it is practice, but part of it is accepting that you will need to look them up. I always do. Also ask yourself whether you really need to understand every argument. In this day and age of AI do you need to understand every line of code? Especially if coding isn't your thing.
 
-For this heatmap we're going to use the colour and linewidth aesthetics.
+For this heatmap we're going to use the colour aesthetic.
 
 ```{r}
 #| message: false
 #| warning: false
 
 p <- ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
-    geom_tile(colour = "white", linewidth = 2)
+    geom_tile(colour = "white")
 
 p
 ```
 
-We're now going to add layers to the plot. First, we'll add axis and legend labels. That's all you need if it's for a publication, but if it's for a presentation or a blog I would also include a title and possibly a subtitle.
+We're now going to add layers to the plot. First, we'll add the axis and legend labels. That's all you need if it's for a publication, but if it's for a presentation or a blog I would also include a title and possibly a subtitle.
 
 ```{r}
 #| message: false
@@ -162,7 +145,7 @@ p_labels
 
 Many figures in publications stop there, using the default formatting settings. However, to make your plot eye-catching and easy to read, choose colours wisely and declutter.
 
-Let's change the colour palette to one that makes it easier to distinguish between the low and high values. You can either use a ready-made palette or build your own. The R colour palette picker (add link) has a huge variety to choose from. If you find that list a bit overwhelming to look through, I'd recommend starting with the viridis palettes or the ColorBrewer palettes. For this example I'll use a ColorBrewer palette.
+Let's change the colour palette to one that makes it easier to distinguish between the low and high values. You can either use a ready-made palette or build your own. The R Graph Gallery's colour palette finder (add link) has a huge variety to choose from. If you find that list a bit overwhelming to look through, I'd recommend starting with the viridis palettes or the ColorBrewer palettes. For this example I'll use a ColorBrewer palette.
 
 One thing to watch here: our tiles are coloured using `fill`, so we need a `scale_fill_*` function rather than `scale_colour_*`. Because `n_contigs` is a continuous variable we also need `scale_fill_distiller()`, which interpolates a ColorBrewer palette across a continuous range. `scale_fill_brewer()` looks like the obvious choice, but it only works with discrete variables.
 
