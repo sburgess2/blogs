@@ -123,7 +123,7 @@ For this heatmap we're going to use the colour aesthetic.
 #| warning: false
 
 p <- ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
-    geom_tile(colour = "white")
+    geom_tile(colour = "white", linewidth = 1.5)
 
 p
 ```
@@ -188,29 +188,86 @@ custom_colors <- c(
 
 ggplot(df, aes(x = x, y = y)) +
 geom_point() +
-scale_fill_manual(color = custom_colors)
+scale_fill_manual(values = custom_colors)
 ```
 
 Back to our heatmap. You'll notice that where n_contig = 0 the tile was coloured light yellow (as per the palette). However, you may want a value of 0 to have no colour. There are multiple options. The first option is to set limits within the scale_fill_distiller() or `scale_fill_gradient()` function and assign white (or the background colour of your plot) to `na.value`.
 
-Another option is to convert the zeros to `NA` first before plotting as geom_tile() will not fill `NA` values. If your dataset already has missing values instead of the zeros, you don't need to do anything.
+```{r}
+#| message: false
+#| warning: false
+#| eval: false
+
+
+
+p_Colour <- p_labels +
+    scale_fill_distiller(
+        palette = "YlGnBu",
+        direction = 1,
+        limits = c(1, 10),
+        na.value = "white"
+    )
+```
+
+Another option is to convert the zeros to `NA` first then set the argument `na.value` to white (the default colour is `grey50`). If your dataset already has missing values instead of the zeros, you only need to add the `na.value` argument.
+
+```{r}
+#| message: false
+#| warning: false
+#| eval: false
+
+#Convert zeros to NA
+df <- df |>
+    mutate(n_contigs = na_if(n_contigs, 0))
+
+p <- ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
+    geom_tile(colour = "white")
+
+p_labels <- p +
+    labs(x = "Antimicrobial resistance gene",
+        y = "Family",
+        fill = "Number of contigs"
+    )
+
+p_labels +
+    geom_tile(colour = "white", linewidth = 2) +
+    scale_fill_distiller(
+        palette = "YlGnBu",
+        direction = 1,
+        na.value = "white"
+    )
+```
 
 Alternatively you can use a binned scale, in other words assign each value to a bin and use the `scale_fill_stepsn()` function.
 
-The grey panel background is a ggplot2 default that I almost always remove. `theme_minimal()` does it in one line.
+```{r}
+#| message: false
+#| warning: false
+#| eval: false
+
+p_labels +
+    scale_fill_stepsn(
+        colours = c("#EDF8B1", "#7FCDBB", "#225EA8", "#253494"),
+        breaks = c(2, 4, 6, 8),
+        limits = c(1, 10),
+        na.value = "white"
+    )
+```
+
+You may have noticed when using ggplot2 that the grey panel background is a ggplot2 default. We can see the outline of it around the heatmap. To remove this grey background we will use `theme_minimal()`.  There are many other themes that you could try out that are also quite clean e.g. `theme_light()` and `theme_classic()`
 
 ```{r}
 #| message: false
 #| warning: false
 
-p_theme <- p_custom + theme_minimal()
+p_theme <- p_colour + theme_minimal()
 
 p_theme
 ```
 
-You'll see the gridlines survive, and on a heatmap they're pointless because the tiles sit on top of them. We'll clear those out shortly. `theme_bw()`, `theme_light()` and `theme_classic()` are worth a look too, and all of them take a `base_size` argument that scales every piece of text at once, which is handy when a plot is going into slides.
+Next, we'll tidy up some of the formatting, to make it easier for the audience to read our plot. The y-axis title, "Family" is currently rotated through 90 degrees and sitting halfway down the left-hand side. This is common practice for scientific publications but it requires the reader to tilt their head to read one word. I'd rather have it horizontal and above the y axis. There are arguments which allow the y axis title to be rotated and moved above axis. You can try it using the following code:
 
-Now the y-axis title. "Family" is currently rotated through 90 degrees and sitting halfway down the left-hand side, which asks readers to tilt their head to read one word. I'd rather have it horizontal and above the labels it belongs to.
+However, I would prefer the y axis title to be aligned with the plot so instead we will use `subtile`.
 
 No argument in ggplot2 moves an axis title up there, so the trick is to stop using the axis title and borrow the subtitle slot instead.
 
@@ -248,16 +305,8 @@ label_col <- "#4D4D4D"
 font <- "sans"
 brand_font <- "sans"
 
-p_final <- p_custom +
+p_final <- p_theme +
     theme_minimal(base_size = 12) +
-    labs(
-        title = "Gram-positive and Gram-negative families carry almost entirely separate resistance genes",
-        subtitle = "Family",
-        x = "Antimicrobial resistance gene",
-        y = NULL,
-        fill = "Number of contigs",
-        caption = "Simulated data. Gene and family names are real, the counts are not."
-    ) +
     theme(
         legend.position = "top",
         legend.justification = "left",
@@ -265,7 +314,7 @@ p_final <- p_custom +
         legend.direction = "horizontal",
         legend.title = element_text(color = text_col, family = font),
         legend.text = element_text(color = label_col, family = font),
-        plot.title.position = "plot",
+        plot.subtitle.position = "plot",
         plot.caption.position = "plot",
         plot.margin = margin(10, 10, 10, 10),
         plot.title = element_textbox_simple(
