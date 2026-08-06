@@ -32,20 +32,25 @@ library(gt)
 library(ggtext)
 ```
 
-In this example we'll be generating a heatmap using a simulated dataset. It gives the number of contigs carrying each antimicrobial resistance gene, broken down by bacterial family. The numbers are made up, but the gene and family names are real, and which genes turn up in which families follows what you'd expect biologically. Load the data from here:
+In this example we'll be generating a heatmap using a simulated dataset. This dataset gives the number of contigs carrying each antimicrobial resistance gene, broken down by bacterial family. The numbers are made up. Load the data from here:
 
 ```{r}
 #| message: false
 #| warning: false
+#| eval: false
 
-#Add in github link to read in data
+df <- read_csv("https://raw.githubusercontent.com/sburgess2/blogs/main/2026/2026-08-05-demystifying-ggplot2/data/arg_contigs.csv")
+
+#The first six lines of this dataframe
+head(df)
+
 ```
 
 ```{r}
 #| echo: false
 #| message: false
 #| warning: false
-df <- read_csv("data/arg_contigs.csv")
+df <- read_csv("2026/2026-08-05-demystifying-ggplot2/data/arg_contigs.csv")
 ```
 
 The first step is to tell R/ggplot2 what data you're using. Here, within the `ggplot()` function, we're telling R to use the data frame called `df`, that `gene` goes on the x-axis, `family` goes on the y-axis, and that `fill` specifies each tile will be coloured by `n_contigs`. When you run this you'll see the plot panel with the axes drawn but no data plotted.
@@ -57,7 +62,7 @@ The first step is to tell R/ggplot2 what data you're using. Here, within the `gg
 ggplot(data = df, aes(x = gene, y = family, fill = n_contigs))
 ```
 
-To actually draw the data we need to tell R what type of plot we want. We do this by adding a geom layer with `+`. There isn't a single geom function but a whole family of them, all starting `geom_`, and if you start typing that in your editor you'll get a list of options. There are a lot of different geoms, plus many extensions you can use with ggplot2 (you can find a list here). We're generating a heatmap, so we'll use `geom_tile()`. Other packages provide their own heatmap functions too. Check out these blogs if you want to learn more (R graph gallery).
+To actually plot the data we need to tell R what type of plot we want. We do this by adding a geom layer with `+`. There isn't a single geom function but a whole family of them, all starting with `geom_`, and if you start typing that in your editor you'll get a list of options. There are a lot of different geoms, plus many extensions you can use with ggplot2 (you can find a list [here](https://exts.ggplot2.tidyverse.org/gallery/)). We're generating a heatmap, so we'll use `geom_tile()`. Other packages provide their own heatmap functions too. Check out these blogs [here](https://r-graph-gallery.com/215-the-heatmap-function.html) and [here](https://www.datanovia.com/learn/machine-learning/clustering/heatmap) if you want to learn more about other heatmap functions.
 
 ```{r}
 #| message: false
@@ -67,57 +72,40 @@ ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
     geom_tile()
 ```
 
-We now have a basic heatmap. Before we continue, let's have a look at some of the aesthetics you can use within `geom_tile()`. You can find out more about how to use a function and its arguments by typing `?` followed by the function name, for example `?geom_tile`.
+We now have a basic heatmap. Before we continue, let's have a look at some of the aesthetics you can use within `geom_tile()`. You can find out more about how to use a function and its arguments by typing `?` followed by the function name, for example `?geom_tile`. Sometimes these help files can be tricky to follow.
 
-Every geom shares the same set of core arguments — `mapping`, `data`, `stat`, `position` and a few others. These are always listed in the help file, but they don't always make sense for a particular geom. For example, `position` controls how overlapping shapes are arranged, which matters for bars but not for tiles, since tiles sit at fixed positions. The `mapping` and `data` arguments are only needed if a layer is doing something different from the rest of the plot; otherwise they're specified once in `ggplot()`.
+Generally, ggplot2 geoms share the same set of core arguments e.g. `mapping`, `data`, `show.legend`, `inherit.aes` and a few others. These are always listed in the help file (but I don't think they always make sense). The `mapping` and `data` arguments are only needed if a layer is doing something different from the rest of the plot; otherwise they're specified once in `ggplot()`. Generally for a `geom_tile()` you won't need to change the defaults. However, you may want to use `inherit.aes = FALSE` if you don't want to inherit the plot data from `ggplot()` or use `show.legend = FALSE` if you do not want a legend.
 
-What you're usually reaching for with `geom_tile()` isn't in that list at all. Aesthetics like `fill` and `colour` are passed through `...`, so they don't appear as named arguments, which is exactly why the help file can be confusing to read. Those are listed below.
+The things that you you are more likely to want to change in `geom_tile()` are passed through `...`, so they don't appear as named arguments, which is also why the help file can be confusing to read. For example, aesthetics like `fill` and `colour`. These are listed below.
 
 ```{r}
 #| message: false
 #| warning: false
+#| echo: false
 
-aes_notes <- tribble(
+tribble(
   ~aesthetic, ~description,
-  "x", "Horizontal position of the centre of each tile",
-  "y", "Vertical position of the centre of each tile",
   "fill", "Interior colour of the tile. In a heatmap this is the aesthetic carrying the value",
   "colour", "Colour of the tile border. NA by default, so tiles are drawn without an outline",
   "linewidth", "Thickness of the tile border. Has no visible effect until colour is set",
   "linetype", "Line style of the border, for example solid or dashed",
   "alpha", "Opacity of the fill, from 0 (transparent) to 1 (opaque)",
-  "width", "Width of each tile in data units. NA fills the space between neighbouring x values",
-  "height", "Height of each tile in data units. NA fills the space between neighbouring y values",
-  "group", "Which rows are treated as belonging together. Set automatically, rarely changed for tiles"
-)
-
-tibble(
-  aesthetic = GeomTile$aesthetics(),
-  default = map_chr(aesthetic, \(a) {
-    value <- GeomTile$default_aes[[a]]
-    if (is.null(value)) "—" else paste0(rlang::quo_squash(value))
-  }),
-  required = if_else(aesthetic %in% GeomTile$required_aes, "Yes", "–")
-) |>
-  left_join(aes_notes, by = "aesthetic") |>
-  select(aesthetic, description, default, required) |>
-  gt() |>
+  "width", "Width of each tile",
+  "height", "Height of each tile") |>
+     gt() |>
   cols_label(
     aesthetic = "Aesthetic",
-    description = "What it controls",
-    default = "Default",
-    required = "Required"
+    description = "Description"
   ) |>
-  tab_style(
-    style = cell_text(font = "monospace"),
-    locations = cells_body(columns = c(aesthetic, default))
-  ) |>
+  #tab_style(
+   # style = cell_text(font = "monospace"),
+    #locations = cells_body(columns = c(aesthetic, #description))
+  #) |>
   tab_style(
     style = cell_text(weight = "bold"),
     locations = cells_column_labels()
   ) |>
-  cols_align(align = "left", columns = description) |>
-  cols_align(align = "center", columns = c(default, required)) |>
+  cols_align(align = "left", columns = description) |> 
   tab_options(
     table.width = pct(100),
     table.font.size = px(14),
@@ -126,21 +114,21 @@ tibble(
   )
 ```
 
-Getting the hang of the different arguments is tricky. Part of it is practice, but part of it is accepting that you will need to look them up — I always do. Ask yourself whether you really need to understand every argument. In this day and age of AI you don't need to understand every line of code, especially if coding isn't your thing.
+Getting the hang of the different arguments is tricky. Part of it is practice, but part of it is accepting that you will need to look them up. I always do. Also ask yourself whether you really need to understand every argument. In this day and age of AI do you need to understand every line of code? Especially if coding isn't your thing.
 
-For this heatmap we're going to use the colour and linewidth aesthetics.  
+For this heatmap we're going to use the colour aesthetic.
 
 ```{r}
 #| message: false
 #| warning: false
 
 p <- ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
-    geom_tile(colour = "white", linewidth = 2)
+    geom_tile(colour = "white", linewidth = 1.5)
 
 p
 ```
 
-We're now going to add layers to the plot. First, we'll add axis and legend labels. That's all you need if it's for a publication, but if it's for a presentation or a blog I would also include a title and possibly a subtitle.
+We're now going to add layers to the plot. First, we'll add the axis and legend labels. That's all you need if it's for a publication, but if it's for a presentation or a blog I would also include a title and possibly a subtitle.
 
 ```{r}
 #| message: false
@@ -157,9 +145,9 @@ p_labels
 
 Many figures in publications stop there, using the default formatting settings. However, to make your plot eye-catching and easy to read, choose colours wisely and declutter.
 
-Let's change the colour palette to one that makes it easier to distinguish between the low and high values. You can either use a ready-made palette or build your own. The R colour palette picker (add link) has a huge variety to choose from. If you find that list a bit overwhelming to look through, I'd recommend starting with the viridis palettes or the ColorBrewer palettes. For this example I'll use a ColorBrewer palette.
+Let's change the colour palette to one that makes it easier to distinguish between the low and high values. You can either use a ready-made palette or create your own. The R Graph Gallery's [colour palette finder](https://r-graph-gallery.com/color-palette-finder) has a huge variety to choose from. If you find that list a bit overwhelming to look through, I'd recommend starting with the viridis palettes or the ColorBrewer palettes. For this example I'll use a ColorBrewer palette.
 
-One thing to watch here: our tiles are coloured using `fill`, so we need a `scale_fill_*` function rather than `scale_colour_*`. Because `n_contigs` is a continuous variable we also need `scale_fill_distiller()`, which interpolates a ColorBrewer palette across a continuous range. `scale_fill_brewer()` looks like the obvious choice, but it only works with discrete variables.
+One thing to watch here: our tiles are coloured using `fill`, so we need a `scale_fill_*` function rather than `scale_colour_*`. Because `n_contigs` is a continuous variable we also need `scale_fill_distiller()`. `scale_fill_brewer()` looks like the obvious choice, but it only works with discrete variables. Within the `scale_fill_distiller()` argument we will use the arguments `palette` to specify which palette we want to use (you can find a list of them [here](https://r-graph-gallery.com/38-rcolorbrewers-palettes.html)), and `direction` to specify the order where `direction = 1` is the default order of the palette and `direction = -1` reverses the order.
 
 ```{r}
 #| message: false
@@ -171,71 +159,115 @@ p_colour <- p_labels +
 p_colour
 ```
 
-ColorBrewer and viridis cover most situations, but sooner or later you'll want colours that aren't in either, usually because a client has brand colours or because the plot has to sit alongside others in a report. For a continuous variable, `scale_fill_gradient()` takes a low colour and a high colour and works out everything in between.
+If you want to select the colours to use you can use either `scale_fill_gradient(), which` takes a low colour and a high colour and works out everything in between. If you want a midpoint colour as well, `scale_fill_gradient2()` gives you low, mid and high, which is useful for anything diverging around zero.
 
 ```{r}
 #| message: false
 #| warning: false
+#| eval: false
 
-p_custom <- p_labels +
-    scale_fill_gradient(low = "#F7FBFF", high = "#08306B")
+p_labels +
+    scale_fill_gradient(low = "#F7FEAE", high = "#045275")
 
-p_custom
+p_labels +
+    scale_fill_gradient2(low = "#F7FEAE", mid = "#7CCBA2", high = "#045275")
+```
+
+Custom palettes for categorical fills work differently. If you want to use a custom palette, you first create the palette, one colour per category, then add it into the `scale_fill_manual()` function:
+
+```{r}
+#| message: false
+#| warning: false
+#| eval: false
 
 custom_colors <- c(
-        "Mobilisation" = "#EDD746FF",      
-        "Other" = "#00496FFF",         
-        "Antimicrobial resistance" = "#DD4124FF", 
-        "Hypothetical protein" = "#B3B7B8FF")
+        "Category 1" = "#EDD746FF",      
+        "Category 2" = "#00496FFF",         
+        "Category 3" = "#DD4124FF", 
+        "Category 4" = "#B3B7B8FF")
+
+ggplot(df, aes(x = x, y = y)) +
+geom_point() +
+scale_fill_manual(values = custom_colors)
 ```
 
-The thing I'd pay attention to when choosing those two colours is lightness. If your low and high colours are similar in lightness, the tiles will look different from each other but a reader won't be able to tell which is bigger, and the whole thing collapses if it's printed in greyscale or read by someone with colour vision deficiency. Squinting at it works surprisingly well as a test.
-
-If you want a midpoint colour as well, `scale_fill_gradient2()` gives you low, mid and high, which is useful for anything diverging around zero. `scale_fill_gradientn()` takes as many colours as you care to hand it.
-
-Custom palettes for categorical fills work differently. There's no interpolation to do, so you give `scale_fill_manual()` one colour per category. Naming the values means you don't have to worry about the order they come out in:
+Back to our heatmap. You'll notice that where n_contig = 0 the tile was coloured light yellow (as per the palette). However, you may want a value of 0 to have no colour. There are multiple options. The first option is to set limits within the scale_fill_distiller() or `scale_fill_gradient()` function and assign white (or the background colour of your plot) to `na.value`.
 
 ```{r}
 #| message: false
 #| warning: false
+#| eval: false
 
-df_banded <- df |>
-    mutate(
-        band = cut(
-            n_contigs,
-            breaks = c(-1, 0, 3, 6, 10),
-            labels = c("None", "Low", "Medium", "High")
-        )
+
+
+p_Colour <- p_labels +
+    scale_fill_distiller(
+        palette = "YlGnBu",
+        direction = 1,
+        limits = c(1, 10),
+        na.value = "white"
+    )
+```
+
+Another option is to convert the zeros to `NA` first then set the argument `na.value` to white (the default colour is `grey50`). If your dataset already has missing values instead of the zeros, you only need to add the `na.value` argument.
+
+```{r}
+#| message: false
+#| warning: false
+#| eval: false
+
+#Convert zeros to NA
+df <- df |>
+    mutate(n_contigs = na_if(n_contigs, 0))
+
+p <- ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
+    geom_tile(colour = "white")
+
+p_labels <- p +
+    labs(x = "Antimicrobial resistance gene",
+        y = "Family",
+        fill = "Number of contigs"
     )
 
-ggplot(df_banded, aes(x = gene, y = family, fill = band)) +
+p_labels +
     geom_tile(colour = "white", linewidth = 2) +
-    scale_fill_manual(
-        values = c(
-            "None" = "#F0F0F0",
-            "Low" = "#BDD7E7",
-            "Medium" = "#6BAED6",
-            "High" = "#08519C"
-        )
+    scale_fill_distiller(
+        palette = "YlGnBu",
+        direction = 1,
+        na.value = "white"
     )
 ```
 
-Banding a continuous variable like this throws away detail, so I wouldn't do it by default. It earns its place when the message is which band a tile falls into and the exact count adds nothing.
+Alternatively you can use a binned scale, in other words assign each value to a bin and use the `scale_fill_stepsn()` function.
 
-The grey panel background is a ggplot2 default that I almost always remove. `theme_minimal()` does it in one line.
+```{r}
+#| message: false
+#| warning: false
+#| eval: false
+
+p_labels +
+    scale_fill_stepsn(
+        colours = c("#EDF8B1", "#7FCDBB", "#225EA8", "#253494"),
+        breaks = c(2, 4, 6, 8),
+        limits = c(1, 10),
+        na.value = "white"
+    )
+```
+
+You may have noticed when using ggplot2 that the grey panel background is a ggplot2 default. We can see the outline of it around the heatmap. To remove this grey background we will use `theme_minimal()`.  There are many other themes that you could try out that are also quite clean e.g. `theme_light()` and `theme_classic()`
 
 ```{r}
 #| message: false
 #| warning: false
 
-p_theme <- p_custom + theme_minimal()
+p_theme <- p_colour + theme_minimal()
 
 p_theme
 ```
 
-You'll see the gridlines survive, and on a heatmap they're pointless because the tiles sit on top of them. We'll clear those out shortly. `theme_bw()`, `theme_light()` and `theme_classic()` are worth a look too, and all of them take a `base_size` argument that scales every piece of text at once, which is handy when a plot is going into slides.
+Next, we'll tidy up some of the formatting, to make it easier for the audience to read our plot. The y-axis title, "Family" is currently rotated through 90 degrees and sitting halfway down the left-hand side. This is common practice for scientific publications but it requires the reader to tilt their head to read one word. I'd rather have it horizontal and above the y axis. There are arguments which allow the y axis title to be rotated and moved above axis. You can try it using the following code:
 
-Now the y-axis title. "Family" is currently rotated through 90 degrees and sitting halfway down the left-hand side, which asks readers to tilt their head to read one word. I'd rather have it horizontal and above the labels it belongs to.
+However, I would prefer the y axis title to be aligned with the plot so instead we will use `subtile`.
 
 No argument in ggplot2 moves an axis title up there, so the trick is to stop using the axis title and borrow the subtitle slot instead.
 
@@ -273,16 +305,8 @@ label_col <- "#4D4D4D"
 font <- "sans"
 brand_font <- "sans"
 
-p_final <- p_custom +
+p_final <- p_theme +
     theme_minimal(base_size = 12) +
-    labs(
-        title = "Gram-positive and Gram-negative families carry almost entirely separate resistance genes",
-        subtitle = "Family",
-        x = "Antimicrobial resistance gene",
-        y = NULL,
-        fill = "Number of contigs",
-        caption = "Simulated data. Gene and family names are real, the counts are not."
-    ) +
     theme(
         legend.position = "top",
         legend.justification = "left",
@@ -290,7 +314,7 @@ p_final <- p_custom +
         legend.direction = "horizontal",
         legend.title = element_text(color = text_col, family = font),
         legend.text = element_text(color = label_col, family = font),
-        plot.title.position = "plot",
+        plot.subtitle.position = "plot",
         plot.caption.position = "plot",
         plot.margin = margin(10, 10, 10, 10),
         plot.title = element_textbox_simple(
@@ -341,7 +365,7 @@ One last thing, and it's what took me longest to work out. The plot in the plot 
 
 In a Quarto document, set the size in the chunk options. This is what gets used when the document renders, so it's the one that decides your final output:
 
-```
+```         
 #| fig-width: 12
 #| fig-height: 7
 ```
@@ -382,4 +406,4 @@ gg_record(
 
 That's the plot. Most of those lines were theme arguments with nothing to do with the data, which is what I'd want my PhD student to take away. Getting a plot on screen takes one line. The formatting afterwards is where the afternoon goes.
 
-Note to self to add in Nicola Rennie's [ADD: which package?].
+Note to self to add in Nicola Rennie's \[ADD: which package?\].
