@@ -145,9 +145,9 @@ p_labels
 
 Many figures in publications stop there, using the default formatting settings. However, to make your plot eye-catching and easy to read, choose colours wisely and declutter.
 
-Let's change the colour palette to one that makes it easier to distinguish between the low and high values. You can either use a ready-made palette or build your own. The R Graph Gallery's colour palette finder (add link) has a huge variety to choose from. If you find that list a bit overwhelming to look through, I'd recommend starting with the viridis palettes or the ColorBrewer palettes. For this example I'll use a ColorBrewer palette.
+Let's change the colour palette to one that makes it easier to distinguish between the low and high values. You can either use a ready-made palette or create your own. The R Graph Gallery's [colour palette finder](https://r-graph-gallery.com/color-palette-finder) has a huge variety to choose from. If you find that list a bit overwhelming to look through, I'd recommend starting with the viridis palettes or the ColorBrewer palettes. For this example I'll use a ColorBrewer palette.
 
-One thing to watch here: our tiles are coloured using `fill`, so we need a `scale_fill_*` function rather than `scale_colour_*`. Because `n_contigs` is a continuous variable we also need `scale_fill_distiller()`, which interpolates a ColorBrewer palette across a continuous range. `scale_fill_brewer()` looks like the obvious choice, but it only works with discrete variables.
+One thing to watch here: our tiles are coloured using `fill`, so we need a `scale_fill_*` function rather than `scale_colour_*`. Because `n_contigs` is a continuous variable we also need `scale_fill_distiller()`. `scale_fill_brewer()` looks like the obvious choice, but it only works with discrete variables. Within the `scale_fill_distiller()` argument we will use the arguments `palette` to specify which palette we want to use (you can find a list of them [here](https://r-graph-gallery.com/38-rcolorbrewers-palettes.html)), and `direction` to specify the order where `direction = 1` is the default order of the palette and `direction = -1` reverses the order.
 
 ```{r}
 #| message: false
@@ -159,56 +159,43 @@ p_colour <- p_labels +
 p_colour
 ```
 
-ColorBrewer and viridis cover most situations, but sooner or later you'll want colours that aren't in either, usually because a client has brand colours or because the plot has to sit alongside others in a report. For a continuous variable, `scale_fill_gradient()` takes a low colour and a high colour and works out everything in between.
+If you want to select the colours to use you can use either `scale_fill_gradient(), which` takes a low colour and a high colour and works out everything in between. If you want a midpoint colour as well, `scale_fill_gradient2()` gives you low, mid and high, which is useful for anything diverging around zero.
 
 ```{r}
 #| message: false
 #| warning: false
+#| eval: false
 
-p_custom <- p_labels +
-    scale_fill_gradient(low = "#F7FBFF", high = "#08306B")
+p_labels +
+    scale_fill_gradient(low = "#F7FEAE", high = "#045275")
 
-p_custom
+p_labels +
+    scale_fill_gradient2(low = "#F7FEAE", mid = "#7CCBA2", high = "#045275")
+```
+
+Custom palettes for categorical fills work differently. If you want to use a custom palette, you first create the palette, one colour per category, then add it into the `scale_fill_manual()` function:
+
+```{r}
+#| message: false
+#| warning: false
+#| eval: false
 
 custom_colors <- c(
-        "Mobilisation" = "#EDD746FF",      
-        "Other" = "#00496FFF",         
-        "Antimicrobial resistance" = "#DD4124FF", 
-        "Hypothetical protein" = "#B3B7B8FF")
+        "Category 1" = "#EDD746FF",      
+        "Category 2" = "#00496FFF",         
+        "Category 3" = "#DD4124FF", 
+        "Category 4" = "#B3B7B8FF")
+
+ggplot(df, aes(x = x, y = y)) +
+geom_point() +
+scale_fill_manual(color = custom_colors)
 ```
 
-The thing I'd pay attention to when choosing those two colours is lightness. If your low and high colours are similar in lightness, the tiles will look different from each other but a reader won't be able to tell which is bigger, and the whole thing collapses if it's printed in greyscale or read by someone with colour vision deficiency. Squinting at it works surprisingly well as a test.
+Back to our heatmap. You'll notice that where n_contig = 0 the tile was coloured light yellow (as per the palette). However, you may want a value of 0 to have no colour. There are multiple options. The first option is to set limits within the scale_fill_distiller() or `scale_fill_gradient()` function and assign white (or the background colour of your plot) to `na.value`.
 
-If you want a midpoint colour as well, `scale_fill_gradient2()` gives you low, mid and high, which is useful for anything diverging around zero. `scale_fill_gradientn()` takes as many colours as you care to hand it.
+Another option is to convert the zeros to `NA` first before plotting as geom_tile() will not fill `NA` values. If your dataset already has missing values instead of the zeros, you don't need to do anything.
 
-Custom palettes for categorical fills work differently. There's no interpolation to do, so you give `scale_fill_manual()` one colour per category. Naming the values means you don't have to worry about the order they come out in:
-
-```{r}
-#| message: false
-#| warning: false
-
-df_banded <- df |>
-    mutate(
-        band = cut(
-            n_contigs,
-            breaks = c(-1, 0, 3, 6, 10),
-            labels = c("None", "Low", "Medium", "High")
-        )
-    )
-
-ggplot(df_banded, aes(x = gene, y = family, fill = band)) +
-    geom_tile(colour = "white", linewidth = 2) +
-    scale_fill_manual(
-        values = c(
-            "None" = "#F0F0F0",
-            "Low" = "#BDD7E7",
-            "Medium" = "#6BAED6",
-            "High" = "#08519C"
-        )
-    )
-```
-
-Banding a continuous variable like this throws away detail, so I wouldn't do it by default. It earns its place when the message is which band a tile falls into and the exact count adds nothing.
+Alternatively you can use a binned scale, in other words assign each value to a bin and use the `scale_fill_stepsn()` function.
 
 The grey panel background is a ggplot2 default that I almost always remove. `theme_minimal()` does it in one line.
 
