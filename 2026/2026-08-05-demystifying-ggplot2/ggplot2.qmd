@@ -50,7 +50,7 @@ head(df)
 #| echo: false
 #| message: false
 #| warning: false
-df <- read_csv("2026/2026-08-05-demystifying-ggplot2/data/arg_contigs.csv")
+df <- read_csv("data/arg_contigs.csv")
 ```
 
 The first step is to tell R/ggplot2 what data you're using. Here, within the `ggplot()` function, we're telling R to use the data frame called `df`, that `gene` goes on the x-axis, `family` goes on the y-axis, and that `fill` specifies each tile will be coloured by `n_contigs`. When you run this you'll see the plot panel with the axes drawn but no data plotted.
@@ -123,7 +123,7 @@ For this heatmap we're going to use the colour aesthetic.
 #| warning: false
 
 p <- ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
-    geom_tile(colour = "white", linewidth = 1.5)
+    geom_tile(colour = "white", linewidth = 1)
 
 p
 ```
@@ -267,26 +267,47 @@ p_theme
 
 Next, we'll tidy up some of the formatting, to make it easier for the audience to read our plot. The y-axis title, "Family" is currently rotated through 90 degrees and sitting halfway down the left-hand side. This is common practice for scientific publications but it requires the reader to tilt their head to read one word. I'd rather have it horizontal and above the y axis. There are arguments which allow the y axis title to be rotated and moved above axis. You can try it using the following code:
 
-However, I would prefer the y axis title to be aligned with the plot so instead we will use `subtile`.
+```{r}
+#| message: false
+#| warning: false
 
-No argument in ggplot2 moves an axis title up there, so the trick is to stop using the axis title and borrow the subtitle slot instead.
+p_theme +
+    theme(
+        axis.title.y = element_text(
+            angle = 0,
+            vjust = 1,
+            hjust = 1
+        )
+    )
+```
+
+`angle = 0` rotates the title back to horizontal, and `vjust = 1` pushes it to the top of the axis. `hjust = 1` right-aligns it so it sits close to the family names, and the `margin()` stops it butting up against them.
+
+One option is to use `labs(tag = )`. A tag can be positioned by coordinates, so you can drop it directly above the family names rather than out at the plot edge.
 
 ```{r}
 #| message: false
 #| warning: false
 
-p_axis <- p_theme +
+p_tag <- p_theme +
     labs(
         y = NULL,
-        subtitle = "Family"
+        tag = "Family"
+    ) +
+    theme(
+        plot.tag = element_text(hjust = 0, size = rel(0.9)),
+        plot.tag.position = c(0.02, 0.78),
+        plot.tag.location = "plot"
     )
 
-p_axis
+p_tag
 ```
 
-Setting `y = NULL` removes the axis title and the subtitle appears top left. Pair it with `plot.title.position = "plot"` in the theme, which aligns the title and subtitle to the left edge of the whole plot instead of the panel, so the subtitle lines up over the family names.
+`plot.tag.position` takes two numbers between 0 and 1, measured across the width and height of the plot. So `c(0.02, 0.78)` sits the tag 2% in from the left and 78% of the way up. `plot.tag.location = "plot"` measures those against the whole plot rather than the panel, and `hjust = 0` left-aligns the text at that point.
 
-One thing to know: with the legend at the top, the subtitle sits above the legend, so there's a gap between "Family" and the labels underneath it. If that bothers you, `plot.tag` positions text by coordinates instead. Setting `plot.tag.position = c(0, 0.78)` puts the label at the left edge, 78% of the way up, and you can nudge that number until it sits where you want.
+Both numbers need nudging by eye. Increase the first to shift the label right until it lines up over the family names, and adjust the second until it sits just above the top row. The values that work depend on the size of your plot, so if you change the figure dimensions you'll need to revisit them.
+
+Worth knowing that a tag placed this way doesn't reserve any space for itself, it simply sits on top of whatever is underneath. That's what lets you tuck it into the gap, but it also means it will happily overlap your legend or the tiles if the coordinates are off.
 
 Everything left is `theme()`. This is the function my PhD student was complaining about, and she's right that it's fiddly — there are over a hundred arguments and they're all named after the thing they control, which only helps once you know what the things are called.
 
