@@ -56,9 +56,7 @@ df <- read_csv("https://raw.githubusercontent.com/sburgess2/blogs/main/2026/2026
 This is what the first six lines of this dataframe looks like:
 
 ```{r}
-
 head(df)
-
 ```
 
 ```{r}
@@ -143,64 +141,6 @@ p <- ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
 p
 ```
 
-We're now going to add layers to the plot. First, we'll add the axis and legend labels. That's all you need if it's for a publication, but if it's for a presentation or a blog I would also include a title and possibly a subtitle.
-
-```{r}
-#| message: false
-#| warning: false
-
-p_labels <- p +
-    labs(x = "Antimicrobial resistance gene",
-        y = "Family",
-        fill = "Number of contigs"
-    )
-
-p_labels
-```
-
-The y-axis title, "Family" is currently rotated through 90 degrees and sitting halfway down the left-hand side. This is common practice for scientific publications but it requires the reader to tilt their head to read one word. I'd rather have it horizontal and above the y axis. There are arguments which allow the y axis title to be rotated and moved above axis within the theme function. You can try it using the following code:
-
-```{r}
-#| message: false
-#| warning: false
-
-p_labels +
-    theme(
-        axis.title.y = element_text(
-            angle = 0,
-            vjust = 1,
-            hjust = 1
-        )
-    )
-```
-
-`angle = 0` rotates the title back to horizontal, and `vjust = 1` pushes it to the top of the axis. `hjust = 1` right-aligns it. However, because when the y-axis title is set using labs = it always sits to the left. I would prefer it to be positioned directly above the family names. One option is to use `labs(tag = )`. A tag can be positioned by coordinates (within the theme function), so you can drop it directly above the family names rather than out at the plot edge.
-
-```{r}
-#| message: false
-#| warning: false
-
-p_tag <- p_labels +
-    labs(
-        y = NULL,
-        tag = "Family"
-    ) +
-    theme(
-        plot.tag = element_text(hjust = 0),
-        #size = rel(0.9)),
-        plot.tag.position = c(0.02, 0.78),
-        plot.tag.location = "plot"
-    )
-
-p_tag
-```
-
-`plot.tag.position` takes two numbers between 0 and 1, measured across the width and height of the plot. So `c(0.02, 0.78)` sits the tag 2% in from the left and 78% of the way up. `plot.tag.location = "plot"` measures those against the whole plot rather than the panel, and `hjust = 0` left-aligns the text at that point.
-
-Both numbers need nudging by eye. Increase the first to shift the label right until it lines up over the family names, and adjust the second until it sits just above the top row. The values that work depend on the size of your plot, so if you change the figure dimensions you'll need to revisit them.
-
-Worth knowing that a tag placed this way doesn't reserve any space for itself, it simply sits on top of whatever is underneath. That's what lets you tuck it into the gap, but it also means it will happily overlap your legend or the tiles if the coordinates are off.
-
 Many figures in publications stop there, using the default formatting settings. However, to make your plot eye-catching and easy to read, choose colours wisely and declutter.
 
 Let's change the colour palette to one that makes it easier to distinguish between the low and high values. You can either use a ready-made palette or create your own. The R Graph Gallery's [colour palette finder](https://r-graph-gallery.com/color-palette-finder) has a huge variety to choose from. If you find that list a bit overwhelming to look through, I'd recommend starting with the viridis palettes or the ColorBrewer palettes. For this example I'll use a ColorBrewer palette.
@@ -211,7 +151,7 @@ One thing to watch here: our tiles are coloured using `fill`, so we need a `scal
 #| message: false
 #| warning: false
 
-p_colour <- p_tag +
+p_colour <- p +
     scale_fill_distiller(palette = "YlGnBu", direction = 1)
 
 p_colour
@@ -224,10 +164,10 @@ If you want to select the colours to use you can use either `scale_fill_gradient
 #| warning: false
 #| eval: false
 
-p_tag +
+p +
     scale_fill_gradient(low = "#F7FEAE", high = "#045275")
 
-p_tag +
+p +
     scale_fill_gradient2(low = "#F7FEAE", mid = "#7CCBA2", high = "#045275")
 ```
 
@@ -254,18 +194,19 @@ Back to our heatmap. You'll notice that where n_contig = 0 the tile was coloured
 ```{r}
 #| message: false
 #| warning: false
-#| eval: false
 
-
-
-p_tag +
+p_colour <- p +
     scale_fill_distiller(
         palette = "YlGnBu",
         direction = 1,
         limits = c(1, 10),
         na.value = "white"
     )
+
+p_colour
 ```
+
+Setting `limits = c(1, 10)` means the palette now starts at 1 rather than 0. Anything below the limits is treated as out of range and picks up `na.value`, so the zeros come out white. This is the version of `p_colour` we'll carry forward.
 
 Another option is to convert the zeros to `NA` first then set the argument `na.value` to white (the default colour is `grey50`). If your dataset already has missing values instead of the zeros, you only need to add the `na.value` argument.
 
@@ -303,7 +244,7 @@ Alternatively you can use a binned scale, in other words assign each value to a 
 #| warning: false
 #| eval: false
 
-p_labels +
+p +
     scale_fill_stepsn(
         colours = c("#EDF8B1", "#7FCDBB", "#225EA8", "#253494"),
         breaks = c(2, 4, 6, 8),
@@ -312,13 +253,63 @@ p_labels +
     )
 ```
 
+Next, we'll add the axis and legend labels. That's all you need if it's for a publication, but if it's for a presentation or a blog I would also include a title and possibly a subtitle.
+
+```{r}
+#| message: false
+#| warning: false
+
+p_labels <- p_colour +
+    labs(x = "Antimicrobial resistance gene",
+        y = "Family",
+        fill = "Number of contigs"
+    )
+
+p_labels
+```
+
+The y-axis title, "Family" is currently rotated through 90 degrees and sitting halfway down the left-hand side. This is common practice for scientific publications but it requires the reader to tilt their head to read one word. I'd rather have it horizontal and above the y axis. There are arguments which allow the y axis title to be rotated and moved above axis within the theme function. You can try it using the following code:
+
+```{r}
+#| message: false
+#| warning: false
+
+p_labels +
+    theme(
+        axis.title.y = element_text(
+            angle = 0,
+            vjust = 1,
+            hjust = 1
+        )
+    )
+```
+
+`angle = 0` rotates the title back to horizontal, and `vjust = 1` pushes it to the top of the axis. `hjust = 1` right-aligns it. However, because when the y-axis title is set using labs = it always sits to the left. I would prefer it to be positioned directly above the family names. One option is to use `labs(tag = )`. A tag can be positioned by coordinates (within the theme function), so you can drop it directly above the family names rather than out at the plot edge.
+
+```{r}
+#| message: false
+#| warning: false
+
+p_tag <- p_labels +
+    labs(
+        y = NULL,
+        tag = "Family"
+    )
+
+p_tag
+```
+
+`y = NULL` drops the rotated axis title and `tag = "Family"` puts the text back as a tag, which by default lands in the top left corner. Where it actually sits is controlled by `plot.tag.position` in the `theme()` function, so we'll set that below along with everything else.
+
+Worth knowing that a tag doesn't reserve any space for itself, it simply sits on top of whatever is underneath. That's what lets you tuck it into a gap, but it also means it will happily overlap your legend or your tiles if the coordinates are off.
+
 You may have noticed when using ggplot2 that the grey panel background is a ggplot2 default. We can see the outline of it around the heatmap. To remove this grey background we will use `theme_minimal()`. There are many other themes that you could try out that are also quite clean e.g. `theme_light()` and `theme_classic()`
 
 ```{r}
 #| message: false
 #| warning: false
 
-p_theme <- p_colour + theme_minimal()
+p_theme <- p_tag + theme_minimal()
 
 p_theme
 ```
@@ -430,4 +421,4 @@ ggsave(
 )
 ```
 
-You me be asking the question that it would be a pain/nuisance writing out all the theme() code each time. There are a few options to avoid doing this. Write a template as described [here](https://nrennie.rbind.io/blog/script-templates-r/) by Nicola Rennie. Write a function for your preferred theme - describes one here. or if you are using Claude Pro you could write a SKILL.
+You me be asking the question that it would be a pain/nuisance writing out all the theme() code each time. There are a few options to avoid doing this. Write a template as described by[Nicola Rennie](https://nrennie.rbind.io/blog/script-templates-r/). Generate a custom theme described [here](https://rfortherestofus.com/2025/04/ggplot2-theme)by R for the Rest of Us. Alternatively, if you are using Claude Pro you could write a SKILL.
