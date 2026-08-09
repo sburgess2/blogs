@@ -15,7 +15,7 @@ Recently I was speaking to a PhD student about R. Our conversation went somethin
 >
 > Me: "What about generating plots in R using ggplot2?"
 >
-> Student: "No, that takes so long, particularly adding in colours. I'd love to be able to generate beautiful plots."
+> Student: "No, that takes so long, particularly adding in colours. I'd love to be able to generate beautiful plots though."
 >
 > Me: "It took me quite a while to understand how to use a custom palette and it's also quite fiddly getting the hang of all the different options you can add into the theme function to format a ggplot2 plot."
 
@@ -27,12 +27,23 @@ Hopefully you get the idea that she really doesn't like R. I felt for her, as wr
 #| warning: false
 
 #load libraries
-library(tidyverse)
+#library(tidyverse)
 library(gt)
-library(ggtext)
+#library(ggtext)
 ```
 
-In this example we'll be generating a heatmap using a simulated dataset. This dataset gives the number of contigs carrying each antimicrobial resistance gene, broken down by bacterial family. The numbers are made up. Load the data from here:
+First load the libraries that we'll be using :
+
+```{r}
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(ggtext)
+
+```
+
+In this example we'll be generating a heatmap using a simulated dataset. This dataset gives the number of contigs carrying each antimicrobial resistance gene, broken down by bacterial family. The numbers are made up. You can load the data from here:
 
 ```{r}
 #| message: false
@@ -40,8 +51,12 @@ In this example we'll be generating a heatmap using a simulated dataset. This da
 #| eval: false
 
 df <- read_csv("https://raw.githubusercontent.com/sburgess2/blogs/main/2026/2026-08-05-demystifying-ggplot2/data/arg_contigs.csv")
+```
 
-#The first six lines of this dataframe
+This is what the first six lines of this dataframe looks like:
+
+```{r}
+
 head(df)
 
 ```
@@ -62,21 +77,21 @@ The first step is to tell R/ggplot2 what data you're using. Here, within the `gg
 ggplot(data = df, aes(x = gene, y = family, fill = n_contigs))
 ```
 
-To actually plot the data we need to tell R what type of plot we want. We do this by adding a geom layer with `+`. There isn't a single geom function but a whole family of them, all starting with `geom_`, and if you start typing that in your editor you'll get a list of options. There are a lot of different geoms, plus many extensions you can use with ggplot2 (you can find a list [here](https://exts.ggplot2.tidyverse.org/gallery/)). We're generating a heatmap, so we'll use `geom_tile()`. Other packages provide their own heatmap functions too. Check out these blogs [here](https://r-graph-gallery.com/215-the-heatmap-function.html) and [here](https://www.datanovia.com/learn/machine-learning/clustering/heatmap) if you want to learn more about other heatmap functions.
+To actually plot the data we need to tell R what type of plot we want. We do this by adding a geom layer with `+`. There are a whole family of geoms, all starting with `geom_`, and if you start typing that in your editor you'll get a list of options. There are a lot of different geoms, plus many extensions you can use with ggplot2 (you can find a list [here](https://exts.ggplot2.tidyverse.org/gallery/)). We're generating a heatmap, so we'll use `geom_tile()`. Other packages provide their own heatmap functions too. Check out these blogs [here](https://r-graph-gallery.com/215-the-heatmap-function.html) and [here](https://www.datanovia.com/learn/machine-learning/clustering/heatmap) if you want to learn more about other heatmap functions.
 
 ```{r}
 #| message: false
 #| warning: false
 
 ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
-    geom_tile()
+    geom_tile(show.legend = FALSE)
 ```
 
-We now have a basic heatmap. Before we continue, let's have a look at some of the aesthetics you can use within `geom_tile()`. You can find out more about how to use a function and its arguments by typing `?` followed by the function name, for example `?geom_tile`. Sometimes these help files can be tricky to follow.
+We now have a basic heatmap. Before we continue, let's have a look at some of the aesthetics you can use within `geom_tile()`. You can find out more about how to use a function and its arguments by typing `?` followed by the function name, for example `?geom_tile`.
 
-Generally, ggplot2 geoms share the same set of core arguments e.g. `mapping`, `data`, `show.legend`, `inherit.aes` and a few others. These are always listed in the help file (but I don't think they always make sense). The `mapping` and `data` arguments are only needed if a layer is doing something different from the rest of the plot; otherwise they're specified once in `ggplot()`. Generally for a `geom_tile()` you won't need to change the defaults. However, you may want to use `inherit.aes = FALSE` if you don't want to inherit the plot data from `ggplot()` or use `show.legend = FALSE` if you do not want a legend.
+Generally, ggplot2 geoms share the same set of core arguments e.g. `mapping`, `data`, `show.legend`, `inherit.aes` and a few others. These are always listed in the help file (but sometimes they're tricky to follow). The `mapping` and `data` arguments are only needed if a layer is doing something different from the rest of the plot; otherwise they're specified once in `ggplot()`. Generally for a `geom_tile()` you won't need to change the defaults for these core arguments. However, you may want to use `inherit.aes = FALSE` if you don't want to inherit the plot data from `ggplot()` or use `show.legend = FALSE` if you do not want a legend.
 
-The things that you you are more likely to want to change in `geom_tile()` are passed through `...`, so they don't appear as named arguments, which is also why the help file can be confusing to read. For example, aesthetics like `fill` and `colour`. These are listed below.
+The things that you you are more likely to want to change in `geom_tile()` are passed through `...`, so they don't appear as named arguments, which is also why the help file can be confusing to read. For example, aesthetics such as those listed below.
 
 ```{r}
 #| message: false
@@ -85,13 +100,13 @@ The things that you you are more likely to want to change in `geom_tile()` are p
 
 tribble(
   ~aesthetic, ~description,
-  "fill", "Interior colour of the tile. In a heatmap this is the aesthetic carrying the value",
-  "colour", "Colour of the tile border. NA by default, so tiles are drawn without an outline",
-  "linewidth", "Thickness of the tile border. Has no visible effect until colour is set",
-  "linetype", "Line style of the border, for example solid or dashed",
-  "alpha", "Opacity of the fill, from 0 (transparent) to 1 (opaque)",
-  "width", "Width of each tile",
-  "height", "Height of each tile") |>
+  "fill", "Interior colour of the tile.",
+  "colour", "Colour of the tile border. NA by default, so tiles are drawn without an outline.",
+  "linewidth", "Thickness of the tile border. This has no visible effect until colour is set",
+  "linetype", "Line style of the border, for example solid or dashed.",
+  "alpha", "Opacity of the fill, from 0 (transparent) to 1 (opaque).",
+  "width", "Width of each tile.",
+  "height", "Height of each tile.") |>
      gt() |>
   cols_label(
     aesthetic = "Aesthetic",
@@ -116,7 +131,7 @@ tribble(
 
 Getting the hang of the different arguments is tricky. Part of it is practice, but part of it is accepting that you will need to look them up. I always do. Also ask yourself whether you really need to understand every argument. In this day and age of AI do you need to understand every line of code? Especially if coding isn't your thing.
 
-For this heatmap we're going to use the colour aesthetic.
+For this heatmap we're going to use the colour and linewidth aesthetics.
 
 ```{r}
 #| message: false
@@ -143,6 +158,49 @@ p_labels <- p +
 p_labels
 ```
 
+The y-axis title, "Family" is currently rotated through 90 degrees and sitting halfway down the left-hand side. This is common practice for scientific publications but it requires the reader to tilt their head to read one word. I'd rather have it horizontal and above the y axis. There are arguments which allow the y axis title to be rotated and moved above axis within the theme function. You can try it using the following code:
+
+```{r}
+#| message: false
+#| warning: false
+
+p_labels +
+    theme(
+        axis.title.y = element_text(
+            angle = 0,
+            vjust = 1,
+            hjust = 1
+        )
+    )
+```
+
+`angle = 0` rotates the title back to horizontal, and `vjust = 1` pushes it to the top of the axis. `hjust = 1` right-aligns it. However, because when the y-axis title is set using labs = it always sits to the left. I would prefer it to be positioned directly above the family names. One option is to use `labs(tag = )`. A tag can be positioned by coordinates (within the theme function), so you can drop it directly above the family names rather than out at the plot edge.
+
+```{r}
+#| message: false
+#| warning: false
+
+p_tag <- p_labels +
+    labs(
+        y = NULL,
+        tag = "Family"
+    ) +
+    theme(
+        plot.tag = element_text(hjust = 0),
+        #size = rel(0.9)),
+        plot.tag.position = c(0.02, 0.78),
+        plot.tag.location = "plot"
+    )
+
+p_tag
+```
+
+`plot.tag.position` takes two numbers between 0 and 1, measured across the width and height of the plot. So `c(0.02, 0.78)` sits the tag 2% in from the left and 78% of the way up. `plot.tag.location = "plot"` measures those against the whole plot rather than the panel, and `hjust = 0` left-aligns the text at that point.
+
+Both numbers need nudging by eye. Increase the first to shift the label right until it lines up over the family names, and adjust the second until it sits just above the top row. The values that work depend on the size of your plot, so if you change the figure dimensions you'll need to revisit them.
+
+Worth knowing that a tag placed this way doesn't reserve any space for itself, it simply sits on top of whatever is underneath. That's what lets you tuck it into the gap, but it also means it will happily overlap your legend or the tiles if the coordinates are off.
+
 Many figures in publications stop there, using the default formatting settings. However, to make your plot eye-catching and easy to read, choose colours wisely and declutter.
 
 Let's change the colour palette to one that makes it easier to distinguish between the low and high values. You can either use a ready-made palette or create your own. The R Graph Gallery's [colour palette finder](https://r-graph-gallery.com/color-palette-finder) has a huge variety to choose from. If you find that list a bit overwhelming to look through, I'd recommend starting with the viridis palettes or the ColorBrewer palettes. For this example I'll use a ColorBrewer palette.
@@ -153,7 +211,7 @@ One thing to watch here: our tiles are coloured using `fill`, so we need a `scal
 #| message: false
 #| warning: false
 
-p_colour <- p_labels +
+p_colour <- p_tag +
     scale_fill_distiller(palette = "YlGnBu", direction = 1)
 
 p_colour
@@ -166,10 +224,10 @@ If you want to select the colours to use you can use either `scale_fill_gradient
 #| warning: false
 #| eval: false
 
-p_labels +
+p_tag +
     scale_fill_gradient(low = "#F7FEAE", high = "#045275")
 
-p_labels +
+p_tag +
     scale_fill_gradient2(low = "#F7FEAE", mid = "#7CCBA2", high = "#045275")
 ```
 
@@ -200,7 +258,7 @@ Back to our heatmap. You'll notice that where n_contig = 0 the tile was coloured
 
 
 
-p_Colour <- p_labels +
+p_tag +
     scale_fill_distiller(
         palette = "YlGnBu",
         direction = 1,
@@ -254,7 +312,7 @@ p_labels +
     )
 ```
 
-You may have noticed when using ggplot2 that the grey panel background is a ggplot2 default. We can see the outline of it around the heatmap. To remove this grey background we will use `theme_minimal()`.  There are many other themes that you could try out that are also quite clean e.g. `theme_light()` and `theme_classic()`
+You may have noticed when using ggplot2 that the grey panel background is a ggplot2 default. We can see the outline of it around the heatmap. To remove this grey background we will use `theme_minimal()`. There are many other themes that you could try out that are also quite clean e.g. `theme_light()` and `theme_classic()`
 
 ```{r}
 #| message: false
@@ -265,53 +323,7 @@ p_theme <- p_colour + theme_minimal()
 p_theme
 ```
 
-Next, we'll tidy up some of the formatting, to make it easier for the audience to read our plot. The y-axis title, "Family" is currently rotated through 90 degrees and sitting halfway down the left-hand side. This is common practice for scientific publications but it requires the reader to tilt their head to read one word. I'd rather have it horizontal and above the y axis. There are arguments which allow the y axis title to be rotated and moved above axis. You can try it using the following code:
-
-```{r}
-#| message: false
-#| warning: false
-
-p_theme +
-    theme(
-        axis.title.y = element_text(
-            angle = 0,
-            vjust = 1,
-            hjust = 1
-        )
-    )
-```
-
-`angle = 0` rotates the title back to horizontal, and `vjust = 1` pushes it to the top of the axis. `hjust = 1` right-aligns it so it sits close to the family names, and the `margin()` stops it butting up against them.
-
-One option is to use `labs(tag = )`. A tag can be positioned by coordinates, so you can drop it directly above the family names rather than out at the plot edge.
-
-```{r}
-#| message: false
-#| warning: false
-
-p_tag <- p_theme +
-    labs(
-        y = NULL,
-        tag = "Family"
-    ) +
-    theme(
-        plot.tag = element_text(hjust = 0, size = rel(0.9)),
-        plot.tag.position = c(0.02, 0.78),
-        plot.tag.location = "plot"
-    )
-
-p_tag
-```
-
-`plot.tag.position` takes two numbers between 0 and 1, measured across the width and height of the plot. So `c(0.02, 0.78)` sits the tag 2% in from the left and 78% of the way up. `plot.tag.location = "plot"` measures those against the whole plot rather than the panel, and `hjust = 0` left-aligns the text at that point.
-
-Both numbers need nudging by eye. Increase the first to shift the label right until it lines up over the family names, and adjust the second until it sits just above the top row. The values that work depend on the size of your plot, so if you change the figure dimensions you'll need to revisit them.
-
-Worth knowing that a tag placed this way doesn't reserve any space for itself, it simply sits on top of whatever is underneath. That's what lets you tuck it into the gap, but it also means it will happily overlap your legend or the tiles if the coordinates are off.
-
-Everything left is `theme()`. This is the function my PhD student was complaining about, and she's right that it's fiddly — there are over a hundred arguments and they're all named after the thing they control, which only helps once you know what the things are called.
-
-Before the theme itself I set the colours and fonts as objects at the top. It means changing the whole look of the plot is a single edit instead of fifteen, and if you're making a set of plots for the same report they'll match.
+Everything else can be formatted within the `theme()` function. Before the theme itself I set the colours and fonts as objects at the top. It means changing the whole look of the plot is a single edit instead of fifteen, and if you're making a set of plots for the same report they'll match.
 
 ```{r}
 #| message: false
@@ -319,12 +331,10 @@ Before the theme itself I set the colours and fonts as objects at the top. It me
 #| fig-width: 12
 #| fig-height: 7
 
-bg_col <- "#FFFFFF"
-title_col <- "#0D0D0D"
 text_col <- "#1A1A1A"
 label_col <- "#4D4D4D"
-font <- "sans"
-brand_font <- "sans"
+font <- "Times New Roman"
+bg_col <- "white"
 
 p_final <- p_theme +
     theme_minimal(base_size = 12) +
@@ -335,26 +345,7 @@ p_final <- p_theme +
         legend.direction = "horizontal",
         legend.title = element_text(color = text_col, family = font),
         legend.text = element_text(color = label_col, family = font),
-        plot.subtitle.position = "plot",
-        plot.caption.position = "plot",
         plot.margin = margin(10, 10, 10, 10),
-        plot.title = element_textbox_simple(
-            color = title_col,
-            family = font,
-            size = rel(1.2),
-            margin = margin(b = 5)
-        ),
-        plot.subtitle = element_textbox_simple(
-            color = text_col,
-            family = font,
-            margin = margin(t = 5, b = 5)
-        ),
-        plot.caption = element_textbox_simple(
-            color = label_col,
-            hjust = 0,
-            family = brand_font,
-            margin = margin(t = 10)
-        ),
         axis.text = element_text(color = label_col, family = font, size = rel(0.8)),
         axis.text.x = element_text(angle = 45, hjust = 1),
         panel.grid = element_blank(),
@@ -368,45 +359,15 @@ p_final
 
 Working through what's in there.
 
-The legend arguments put the key at the top, left aligned and horizontal. `legend.location = "plot"` aligns it to the plot edge to match `plot.title.position`, so the title, subtitle and legend all start on the same vertical line. A horizontal legend along the top suits a wide heatmap because it doesn't eat width the tiles could be using.
+The legend arguments put the key at the top, left aligned and horizontal. `legend.location = "plot"` aligns it to the plot edge.
 
 `panel.grid = element_blank()` and `axis.ticks = element_blank()` remove marks a heatmap doesn't need. The tiles already show you where everything is.
 
-`element_textbox_simple()` comes from the ggtext package. What it gives you over `element_text()` is automatic text wrapping, which matters for the title here because it's a full sentence and it has to break somewhere sensible when the plot gets narrower.
+`axis.text.x` is angled at 45 degrees. Generally I prefer my x axis labels to be horizontal but some of the gene names are quite long and won't easily fit horizontally, and angled labels are easier to read than vertical ones.
 
-`plot.title.position` and `plot.caption.position` do the same job at opposite ends of the plot, pushing text out to the edge rather than lining it up with the panel.
+One last thing, the plot in the plot pane is drawn at whatever size the pane happens to be. Drag the pane wider and the text gets relatively smaller, make it narrower and your labels start colliding. You end up tuning text sizes against a moving target.
 
-`axis.text.x` is angled at 45 degrees. Twenty gene names across the bottom won't fit horizontally at any sensible width, and angled labels are easier to read than vertical ones.
-
-`panel.spacing.x` controls the gap between facets, so it does nothing on this plot because there aren't any. It lives in my template and I leave it there for the plots that do need it.
-
-The title is doing real work. Something like "Heatmap of resistance genes by family" tells readers what they can already see. Stating the finding means someone skimming past gets it without decoding the tiles first. The caption is doing a smaller job, making it obvious the numbers are invented so nobody quotes them at me later.
-
-One last thing, and it's what took me longest to work out. The plot in the plot pane is drawn at whatever size the pane happens to be. Drag the pane wider and the text gets relatively smaller, make it narrower and your labels start colliding. You end up tuning text sizes against a moving target.
-
-In a Quarto document, set the size in the chunk options. This is what gets used when the document renders, so it's the one that decides your final output:
-
-```         
-#| fig-width: 12
-#| fig-height: 7
-```
-
-For a file, `ggsave()` takes the dimensions explicitly:
-
-```{r}
-#| eval: false
-
-ggsave(
-    "output/arg_heatmap.png",
-    p_final,
-    width = 12,
-    height = 7,
-    dpi = 300,
-    bg = bg_col
-)
-```
-
-For interactive work, the camcorder package is the one I'd recommend. `gg_record()` sets a fixed canvas, and from then on every plot you draw is rendered at those exact dimensions and shown in the viewer:
+To view your plot in the same dimensions that it will be exported use the camcorder package `gg_record()` sets a fixed canvas, and from then on every plot you draw is rendered at those exact dimensions and shown in the viewer:
 
 ```{r}
 #| eval: false
@@ -421,10 +382,52 @@ gg_record(
     units = "in",
     dpi = 300
 )
+
+ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
+    geom_tile(colour = "white", linewidth = 1) +
+    labs(
+        x = "Antimicrobial resistance gene",
+        y = NULL,
+        fill = "Number of contigs",
+        tag = "Family"
+    ) +
+    scale_fill_distiller(palette = "YlGnBu", direction = 1) +
+    theme_minimal(base_size = 12) +
+    theme(
+        legend.position = "top",
+        legend.justification = "left",
+        legend.location = "plot",
+        legend.direction = "horizontal",
+        legend.title = element_text(color = text_col, family = font),
+        legend.text = element_text(color = label_col, family = font),
+        plot.tag = element_text(hjust = 0, color = text_col, family = font),
+        plot.tag.position = c(0.02, 0.78),
+        plot.tag.location = "plot",
+        plot.margin = margin(10, 10, 10, 10),
+        axis.text = element_text(color = label_col, family = font, size = rel(0.8)),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid = element_blank(),
+        panel.background = element_rect(fill = bg_col, color = bg_col),
+        plot.background = element_rect(fill = bg_col, color = bg_col),
+        axis.ticks = element_blank()
+    )
+
+    gg_stop_recording()
 ```
 
-`gg_resize_film(width = 10, height = 8)` changes the canvas without restarting. It also saves every version it draws, so you end up with a record of how the plot developed, which is more useful than it sounds on the days you want to go back two steps.
+To save the file use `ggsave()`:
 
-That's the plot. Most of those lines were theme arguments with nothing to do with the data, which is what I'd want my PhD student to take away. Getting a plot on screen takes one line. The formatting afterwards is where the afternoon goes.
+```{r}
+#| eval: false
 
-Note to self to add in Nicola Rennie's \[ADD: which package?\].
+ggsave(
+    "output/arg_heatmap.png",
+    p_final,
+    width = 12,
+    height = 7,
+    dpi = 300,
+    bg = bg_col
+)
+```
+
+You me be asking the question that it would be a pain/nuisance writing out all the theme() code each time. There are a few options to avoid doing this. Write a template as described [here](https://nrennie.rbind.io/blog/script-templates-r/) by Nicola Rennie. Write a function for your preferred theme - describes one here. or if you are using Claude Pro you could write a SKILL.
