@@ -56,14 +56,14 @@ df <- read_csv("https://raw.githubusercontent.com/sburgess2/blogs/main/2026/2026
 This is what the first six lines of this dataframe looks like:
 
 ```{r}
-head(df)
-```
-
-```{r}
 #| echo: false
 #| message: false
 #| warning: false
 df <- read_csv("data/arg_contigs.csv")
+```
+
+```{r}
+head(df)
 ```
 
 The first step is to tell R/ggplot2 what data you're using. Here, within the `ggplot()` function, we're telling R to use the data frame called `df`, that `gene` goes on the x-axis, `family` goes on the y-axis, and that `fill` specifies each tile will be coloured by `n_contigs`. When you run this you'll see the plot panel with the axes drawn but no data plotted.
@@ -82,10 +82,10 @@ To actually plot the data we need to tell R what type of plot we want. We do thi
 #| warning: false
 
 ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
-    geom_tile(show.legend = FALSE)
+    geom_tile()
 ```
 
-We now have a basic heatmap. Before we continue, let's have a look at some of the aesthetics you can use within `geom_tile()`. You can find out more about how to use a function and its arguments by typing `?` followed by the function name, for example `?geom_tile`.
+We now have a basic heatmap. Before we continue, let's have a look at some of the arguments you can use within `geom_tile()`. You can find out more about how to use a function and its arguments by typing `?` followed by the function name into the console, for example `?geom_tile`.
 
 Generally, ggplot2 geoms share the same set of core arguments e.g. `mapping`, `data`, `show.legend`, `inherit.aes` and a few others. These are always listed in the help file (but sometimes they're tricky to follow). The `mapping` and `data` arguments are only needed if a layer is doing something different from the rest of the plot; otherwise they're specified once in `ggplot()`. Generally for a `geom_tile()` you won't need to change the defaults for these core arguments. However, you may want to use `inherit.aes = FALSE` if you don't want to inherit the plot data from `ggplot()` or use `show.legend = FALSE` if you do not want a legend.
 
@@ -141,125 +141,13 @@ p <- ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
 p
 ```
 
-Many figures in publications stop there, using the default formatting settings. However, to make your plot eye-catching and easy to read, choose colours wisely and declutter.
-
-Let's change the colour palette to one that makes it easier to distinguish between the low and high values. You can either use a ready-made palette or create your own. The R Graph Gallery's [colour palette finder](https://r-graph-gallery.com/color-palette-finder) has a huge variety to choose from. If you find that list a bit overwhelming to look through, I'd recommend starting with the viridis palettes or the ColorBrewer palettes. For this example I'll use a ColorBrewer palette.
-
-One thing to watch here: our tiles are coloured using `fill`, so we need a `scale_fill_*` function rather than `scale_colour_*`. Because `n_contigs` is a continuous variable we also need `scale_fill_distiller()`. `scale_fill_brewer()` looks like the obvious choice, but it only works with discrete variables. Within the `scale_fill_distiller()` argument we will use the arguments `palette` to specify which palette we want to use (you can find a list of them [here](https://r-graph-gallery.com/38-rcolorbrewers-palettes.html)), and `direction` to specify the order where `direction = 1` is the default order of the palette and `direction = -1` reverses the order.
-
-```{r}
-#| message: false
-#| warning: false
-
-p_colour <- p +
-    scale_fill_distiller(palette = "YlGnBu", direction = 1)
-
-p_colour
-```
-
-If you want to select the colours to use you can use either `scale_fill_gradient(), which` takes a low colour and a high colour and works out everything in between. If you want a midpoint colour as well, `scale_fill_gradient2()` gives you low, mid and high, which is useful for anything diverging around zero.
-
-```{r}
-#| message: false
-#| warning: false
-#| eval: false
-
-p +
-    scale_fill_gradient(low = "#F7FEAE", high = "#045275")
-
-p +
-    scale_fill_gradient2(low = "#F7FEAE", mid = "#7CCBA2", high = "#045275")
-```
-
-Custom palettes for categorical fills work differently. If you want to use a custom palette, you first create the palette, one colour per category, then add it into the `scale_fill_manual()` function:
-
-```{r}
-#| message: false
-#| warning: false
-#| eval: false
-
-custom_colors <- c(
-        "Category 1" = "#EDD746FF",      
-        "Category 2" = "#00496FFF",         
-        "Category 3" = "#DD4124FF", 
-        "Category 4" = "#B3B7B8FF")
-
-ggplot(df, aes(x = x, y = y)) +
-geom_point() +
-scale_fill_manual(values = custom_colors)
-```
-
-Back to our heatmap. You'll notice that where n_contig = 0 the tile was coloured light yellow (as per the palette). However, you may want a value of 0 to have no colour. There are multiple options. The first option is to set limits within the scale_fill_distiller() or `scale_fill_gradient()` function and assign white (or the background colour of your plot) to `na.value`.
-
-```{r}
-#| message: false
-#| warning: false
-
-p_colour <- p +
-    scale_fill_distiller(
-        palette = "YlGnBu",
-        direction = 1,
-        limits = c(1, 10),
-        na.value = "white"
-    )
-
-p_colour
-```
-
-Setting `limits = c(1, 10)` means the palette now starts at 1 rather than 0. Anything below the limits is treated as out of range and picks up `na.value`, so the zeros come out white. This is the version of `p_colour` we'll carry forward.
-
-Another option is to convert the zeros to `NA` first then set the argument `na.value` to white (the default colour is `grey50`). If your dataset already has missing values instead of the zeros, you only need to add the `na.value` argument.
-
-```{r}
-#| message: false
-#| warning: false
-#| eval: false
-
-#Convert zeros to NA
-df <- df |>
-    mutate(n_contigs = na_if(n_contigs, 0))
-
-p <- ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
-    geom_tile(colour = "white")
-
-p_labels <- p +
-    labs(x = "Antimicrobial resistance gene",
-        y = "Family",
-        fill = "Number of contigs"
-    )
-
-p_labels +
-    geom_tile(colour = "white", linewidth = 2) +
-    scale_fill_distiller(
-        palette = "YlGnBu",
-        direction = 1,
-        na.value = "white"
-    )
-```
-
-Alternatively you can use a binned scale, in other words assign each value to a bin and use the `scale_fill_stepsn()` function.
-
-```{r}
-#| message: false
-#| warning: false
-#| eval: false
-
-p +
-    scale_fill_stepsn(
-        colours = c("#EDF8B1", "#7FCDBB", "#225EA8", "#253494"),
-        breaks = c(2, 4, 6, 8),
-        limits = c(1, 10),
-        na.value = "white"
-    )
-```
-
 Next, we'll add the axis and legend labels. That's all you need if it's for a publication, but if it's for a presentation or a blog I would also include a title and possibly a subtitle.
 
 ```{r}
 #| message: false
 #| warning: false
 
-p_labels <- p_colour +
+p_labels <- p +
     labs(x = "Antimicrobial resistance gene",
         y = "Family",
         fill = "Number of contigs"
@@ -284,24 +172,138 @@ p_labels +
     )
 ```
 
-`angle = 0` rotates the title back to horizontal, and `vjust = 1` pushes it to the top of the axis. `hjust = 1` right-aligns it. However, because when the y-axis title is set using labs = it always sits to the left. I would prefer it to be positioned directly above the family names. One option is to use `labs(tag = )`. A tag can be positioned by coordinates (within the theme function), so you can drop it directly above the family names rather than out at the plot edge.
+`angle = 0` rotates the title back to horizontal, and `vjust = 1` pushes it to the top of the axis. `hjust = 1` right-aligns it. However, when the y-axis title is set using `labs =` it always sits to the left. I would prefer it to be positioned directly above the family names. One option is to use `labs(tag = )`. A tag can be positioned by coordinates (within the theme function), so you can place it directly above the family names rather than out at the plot edge. We will use `tag` instead of `y`:
 
 ```{r}
 #| message: false
 #| warning: false
 
-p_tag <- p_labels +
+p_labels <- p +
     labs(
+        x = "Antimicrobial resistance gene",
         y = NULL,
+        fill = "Number of contigs",
         tag = "Family"
     )
 
-p_tag
+p_labels
 ```
 
-`y = NULL` drops the rotated axis title and `tag = "Family"` puts the text back as a tag, which by default lands in the top left corner. Where it actually sits is controlled by `plot.tag.position` in the `theme()` function, so we'll set that below along with everything else.
+`y = NULL` drops the axis title and `tag = "Family"` puts the text back as a tag, which by default lands in the top left corner. The position of the tag is controlled by `plot.tag.position` in the `theme()` function. The `theme()` function will be the last layer we add to the plot (see below). This tag sits on top of whatever is underneath, which means it will overlap your legend or your tiles if the coordinates are off.
 
-Worth knowing that a tag doesn't reserve any space for itself, it simply sits on top of whatever is underneath. That's what lets you tuck it into a gap, but it also means it will happily overlap your legend or your tiles if the coordinates are off.
+Many figures in publications stop there, using the default formatting settings. However, to make your plot eye-catching and easy to read, choose colours wisely and declutter.
+
+Let's change the colour palette to one that makes it easier to distinguish between the low and high values. You can either use a ready-made palette or create your own. The R Graph Gallery's [colour palette finder](https://r-graph-gallery.com/color-palette-finder) has a huge variety to choose from. If you find that list a bit overwhelming to look through, I'd recommend starting with the viridis palettes or the ColorBrewer palettes. For this example I'll use a ColorBrewer palette.
+
+One thing to watch here: our tiles are coloured using `fill`, so we need a `scale_fill_*` function rather than `scale_colour_*`. Because `n_contigs` is a continuous variable we also need `scale_fill_distiller()`. `scale_fill_brewer()` looks like the obvious choice, but it only works with discrete variables. Within the `scale_fill_distiller()` argument we will use the arguments `palette` to specify which palette we want to use (you can find a list of them [here](https://r-graph-gallery.com/38-rcolorbrewers-palettes.html)), and `direction` to specify the order where `direction = 1` is the default order of the palette and `direction = -1` reverses the order.
+
+```{r}
+#| message: false
+#| warning: false
+
+p_colour <- p_labels +
+    scale_fill_distiller(palette = "YlGnBu", direction = 1)
+
+p_colour
+```
+
+If you want to select your own colours, you can use either `scale_fill_gradient(), which` takes a low colour and a high colour and works out everything in between. If you want a midpoint colour as well, `scale_fill_gradient2()` gives you low, mid and high.
+
+```{r}
+#| message: false
+#| warning: false
+#| eval: false
+
+p_labels +
+    scale_fill_gradient(low = "#F7FEAE", high = "#045275")
+
+p_labels +
+    scale_fill_gradient2(low = "#F7FEAE", mid = "#7CCBA2", high = "#045275")
+```
+
+Custom palettes for categorical fills work differently. If you want to use a custom palette, you first create the palette, one colour per category, then add it in using the `scale_fill_manual()` function:
+
+```{r}
+#| message: false
+#| warning: false
+#| eval: false
+
+custom_colors <- c(
+        "Category 1" = "#EDD746FF",      
+        "Category 2" = "#00496FFF",         
+        "Category 3" = "#DD4124FF", 
+        "Category 4" = "#B3B7B8FF")
+
+ggplot(df, aes(x = x, y = y)) +
+    geom_point() +
+    scale_fill_manual(values = custom_colors)
+```
+
+Back to our heatmap. You'll notice that where `n_contig = 0` the tile was coloured light yellow (as per the palette). However, you may want a value of zero to have either no colour or be set to the plot background colours. There are multiple ways to change this. The first option is to set limits within the `scale_fill_distiller()` or `scale_fill_gradient()` function and assign white (or the background colour of your plot) to `na.value`.
+
+```{r}
+#| message: false
+#| warning: false
+
+p_colour <- p_labels +
+    scale_fill_distiller(
+        palette = "YlGnBu",
+        direction = 1,
+        limits = c(1, 10),
+        na.value = "white"
+    )
+
+p_colour
+```
+
+Setting `limits = c(1, 10)` means the palette now starts at one rather than zero. Anything below the limits is treated as out of range and picks up `na.value`, so the zeros come out white. This is the version we'll carry forward.
+
+Another option is to convert the zeros to `NA` first then set the argument `na.value` to white (the default colour is `grey50`). If your dataset already has missing values instead of the zeros, you only need to add the `na.value` argument.
+
+```{r}
+#| message: false
+#| warning: false
+#| eval: false
+
+#Convert zeros to NA
+df <- df |>
+    mutate(n_contigs = na_if(n_contigs, 0))
+
+p <- ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
+    geom_tile(colour = "white", linewidth = 1)
+
+p_labels <- p +
+    labs(x = "Antimicrobial resistance gene",
+        y = NULL,
+        fill = "Number of contigs",
+        tag = "Family"
+    )
+
+p_labels +
+    scale_fill_distiller(
+        palette = "YlGnBu",
+        direction = 1,
+        na.value = "white"
+    )
+```
+
+Alternatively you can use a binned scale, in other words assign each value to a bin and use the `scale_fill_stepsn()` function.
+
+```{r}
+#| message: false
+#| warning: false
+#| eval: false
+
+p_labels +
+    scale_fill_stepsn(
+        colours = c("#EDF8B1", "#7FCDBB", "#225EA8", "#253494"),
+        breaks = c(2, 4, 6, 8),
+        limits = c(1, 10),
+        na.value = "white"
+    )
+```
+
+
 
 You may have noticed when using ggplot2 that the grey panel background is a ggplot2 default. We can see the outline of it around the heatmap. To remove this grey background we will use `theme_minimal()`. There are many other themes that you could try out that are also quite clean e.g. `theme_light()` and `theme_classic()`
 
@@ -309,12 +311,15 @@ You may have noticed when using ggplot2 that the grey panel background is a ggpl
 #| message: false
 #| warning: false
 
-p_theme <- p_tag + theme_minimal()
+p_theme <- p_colour + 
+    theme_minimal(base_size = 12)
 
 p_theme
 ```
 
-Everything else can be formatted within the `theme()` function. Before the theme itself I set the colours and fonts as objects at the top. It means changing the whole look of the plot is a single edit instead of fifteen, and if you're making a set of plots for the same report they'll match.
+Everything else can be formatted within the `theme()` function. Before the theme itself we will set the colours and fonts as objects at the top. It means that if you decide to change the font for the entire you can do this as a single edit instead of multiple edits.
+
+Order matters here. `theme_minimal()` is a complete theme, so that's why any additional formatting, including the tag position, needs to go into a single `theme()` call afterwards. If `theme()` is set first, it will be overidden by `theme_minimal()`.
 
 ```{r}
 #| message: false
@@ -328,7 +333,6 @@ font <- "Times New Roman"
 bg_col <- "white"
 
 p_final <- p_theme +
-    theme_minimal(base_size = 12) +
     theme(
         legend.position = "top",
         legend.justification = "left",
@@ -336,6 +340,9 @@ p_final <- p_theme +
         legend.direction = "horizontal",
         legend.title = element_text(color = text_col, family = font),
         legend.text = element_text(color = label_col, family = font),
+        plot.tag = element_text(hjust = 0, color = text_col, family = font),
+        plot.tag.position = c(0.01, 0.87),
+        plot.tag.location = "plot",
         plot.margin = margin(10, 10, 10, 10),
         axis.text = element_text(color = label_col, family = font, size = rel(0.8)),
         axis.text.x = element_text(angle = 45, hjust = 1),
@@ -358,7 +365,7 @@ The legend arguments put the key at the top, left aligned and horizontal. `legen
 
 One last thing, the plot in the plot pane is drawn at whatever size the pane happens to be. Drag the pane wider and the text gets relatively smaller, make it narrower and your labels start colliding. You end up tuning text sizes against a moving target.
 
-To view your plot in the same dimensions that it will be exported use the camcorder package `gg_record()` sets a fixed canvas, and from then on every plot you draw is rendered at those exact dimensions and shown in the viewer:
+To view your plot in the same dimensions that it will be exported use the camcorder package `gg_record()` then your plot will be generated in the viewer (instead of the plot window) with those exact dimensions:
 
 ```{r}
 #| eval: false
@@ -421,4 +428,4 @@ ggsave(
 )
 ```
 
-You me be asking the question that it would be a pain/nuisance writing out all the theme() code each time. There are a few options to avoid doing this. Write a template as described by[Nicola Rennie](https://nrennie.rbind.io/blog/script-templates-r/). Generate a custom theme described [here](https://rfortherestofus.com/2025/04/ggplot2-theme)by R for the Rest of Us. Alternatively, if you are using Claude Pro you could write a SKILL.
+You me be asking the question that it would be a pain/nuisance writing out all the `theme()` code each time. There are a few options to avoid doing this. Write a template as described by[Nicola Rennie](https://nrennie.rbind.io/blog/script-templates-r/). Generate a custom theme described [here](https://rfortherestofus.com/2025/04/ggplot2-theme)by R for the Rest of Us. Alternatively, if you are using Claude Pro you could write a SKILL.
