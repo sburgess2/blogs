@@ -57,6 +57,8 @@ This is what the first six lines of this data frame look like:
 #| echo: false
 #| message: false
 #| warning: false
+
+#setwd(here::here("2026/2026-08-05-demystifying-ggplot2"))
 df <- read_csv("data/arg_contigs.csv")
 ```
 
@@ -250,6 +252,7 @@ p_colour <- p_labels +
         palette = "YlGnBu",
         direction = 1,
         limits = c(1, 10),
+        breaks = c(2, 4, 6, 8, 10),
         na.value = "white"
     )
 
@@ -336,12 +339,13 @@ p_final <- p_theme +
     theme(
         legend.position = "top",
         legend.justification = "left",
-        legend.location = "plot",
+        legend.location = "panel",
         legend.direction = "horizontal",
-        legend.title = element_text(color = text_col, family = font),
+        legend.title.position = "top",
+        legend.title = element_text(color = text_col, family = font, hjust = 0),
         legend.text = element_text(color = label_col, family = font),
         plot.tag = element_text(hjust = 0, color = text_col, family = font),
-        plot.tag.position = c(0.01, 0.87),
+        plot.tag.position = c(0.05, 0.87),
         plot.tag.location = "plot",
         plot.margin = margin(10, 10, 10, 10),
         axis.text = element_text(color = label_col, family = font, size = rel(0.8)),
@@ -355,9 +359,9 @@ p_final <- p_theme +
 p_final
 ```
 
-Working through what's in there.
+Here are some descriptions of what's been included in the `theme()` function:
 
-The legend arguments put the key at the top, left aligned and horizontal. `legend.location = "plot"` aligns it to the plot edge.
+The legend arguments put the key at the top, left aligned and horizontal. `legend.location` decides what it lines up against: `"panel"` aligns it with the left edge of the tiles, while `"plot"` aligns it with the far left edge of the whole plot, out where the family names and the tag sit. `legend.title.position = "top"` moves "Number of contigs" above the colour bar rather than leaving it alongside, which reads better on a wide horizontal legend and stops the title squeezing the bar. The `breaks` argument in `scale_fill_distiller()` sets which numbers get labelled underneath it.
 
 `panel.grid = element_blank()` and `axis.ticks = element_blank()` remove marks a heatmap doesn't need. The tiles already show you where everything is.
 
@@ -393,27 +397,30 @@ ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
         palette = "YlGnBu",
         direction = 1,
         limits = c(1, 10),
+        breaks = c(2, 4, 6, 8, 10),
         na.value = "white"
     ) +
     theme_minimal(base_size = 12) +
     theme(
         legend.position = "top",
         legend.justification = "left",
-        legend.location = "plot",
+        legend.location = "panel",
         legend.direction = "horizontal",
+        legend.title.position = "top",
         legend.title = element_text(color = text_col, family = font),
         legend.text = element_text(color = label_col, family = font),
-        plot.tag = element_text(hjust = 0, color = text_col, family = font),
-        plot.tag.position = c(0.01, 0.87),
+        plot.tag = element_text(
+            hjust = 0, 
+            color = text_col, family = font),
+        plot.tag.position = c(0.05, 0.87),
         plot.tag.location = "plot",
         plot.margin = margin(10, 10, 10, 10),
-        axis.text = element_text(color = label_col, family = font, size = rel(0.8)),
+        axis.text = element_text(colour = label_col, family = font, size = rel(0.8)),
         axis.text.x = element_text(angle = 45, hjust = 1),
-        panel.grid = element_blank(),
+        axis.title.x = element_text(colour = label_col, family = font),
         panel.background = element_rect(fill = bg_col, color = bg_col),
         plot.background = element_rect(fill = bg_col, color = bg_col),
-        axis.ticks = element_blank()
-    )
+        )
 
     gg_stop_recording()
 ```
