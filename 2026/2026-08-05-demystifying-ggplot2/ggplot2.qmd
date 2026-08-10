@@ -365,14 +365,20 @@ p_final
 
 Here are some descriptions of what's been included in the `theme()` function:
 
-`legend.position = "top"` puts the key at the top
-`legend.justification = "left"` left aligns the legend
-`legend.location = "panel"` aligns the legend with the left edge of the tiles.
-`legend.location = "plot"` would align it with the far left edge of the whole plot, where the family names and the tag sit. `legend.title.position = "top"` moves "Number of contigs" above the colour bar rather than leaving it alongside.
-
-`axis.text` is the tick labels, so the gene names (`axis.text.x`) and family names (`axis.text.y`) , while `axis.title.x` is the name of the x axis. As previouslyIn these three arguments I have used element_text to set the font and colour. We only need `axis.title.x` here because the y-axis title was dropped when we swapped it for the tag, so there's no `axis.title.y` left to style.`axis.text.x` is angles the x axis labels at 45 degrees. Generally I prefer my x axis labels to be horizontal, but some of the gene names are quite long and won't easily fit. 
-
-
+- `legend.position = "top"` puts the key at the top of the plot.
+- `legend.justification = "left"` left aligns it instead of centring it.
+- `legend.location = "panel"` lines it up with the left edge of the tiles. Using `"plot"` would line it up with the far left edge of the whole plot, where the family names and the tag sit.
+- `legend.direction = "horizontal"` lays the colour bar out sideways, which suits a wide heatmap because it doesn't eat width the tiles could be using.
+- `legend.title.position = "top"` moves "Number of contigs" above the colour bar rather than leaving it alongside.
+- `legend.title` and `legend.text` set the font and colour of the legend title and the numbers underneath it, using `element_text()`.
+- `plot.tag` sets the font and colour of the tag, which is standing in for our y-axis title.
+- `plot.tag.position = c(0.05, 0.87)` places the tag 5% in from the left and 87% of the way up. Both numbers need nudging by eye, and they'll need revisiting if you change the figure dimensions.
+- `plot.tag.location = "plot"` measures those coordinates against the whole plot rather than the panel.
+- `plot.margin = margin(10, 10, 10, 10)` sets the space around the outside of the plot, clockwise from the top.
+- `axis.text` is the tick labels, so the gene names and the family names. Setting it here covers both axes at once.
+- `axis.text.x = element_text(angle = 45, hjust = 1)` angles the gene names at 45 degrees. Generally I prefer my x axis labels to be horizontal, but some of the gene names are quite long and won't easily fit. `hjust = 1` keeps the end of each label next to the tile it belongs to.
+- `axis.title.x` is the name of the axis itself, which is a separate element from `axis.text`. We only need the `.x` version because the y-axis title was dropped when we swapped it for the tag, so there's no `axis.title.y` left to style.
+- `panel.background` and `plot.background` set the fill behind the tiles and behind the whole plot. Both use `element_rect()` rather than `element_text()` because they're rectangles rather than text.
 
 One last thing: the plot in the plot pane is drawn at whatever size the pane happens to be. Drag the pane wider and the text gets relatively smaller, make it narrower and your labels start colliding. You end up tuning text sizes against a moving target.
 
