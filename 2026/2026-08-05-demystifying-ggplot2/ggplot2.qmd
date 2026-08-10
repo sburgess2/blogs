@@ -2,7 +2,12 @@
 title: "Demystifying ggplot2"
 author: "Sara Burgess"
 date: last-modified
-format: html
+format: 
+    html: default
+    gfm: default
+knitr: 
+    opts_chunk: 
+      dev: "ragg_png"
 ---
 
 Recently I was speaking to a PhD student about R. Our conversation went something like this (I'm paraphrasing):
@@ -172,7 +177,7 @@ p_labels +
     )
 ```
 
-`angle = 0` rotates the title back to horizontal, and `vjust = 1` pushes it to the top of the axis. `hjust = 1` right-aligns it. However, when the y-axis title is set using `labs()` it always sits to the left. I would prefer it to be positioned directly above the family names. One option is to use `labs(tag = )`. A tag can be positioned by coordinates (within the theme function), so you can place it directly above the family names rather than out at the plot edge. We will use `tag` instead of `y`:
+`angle = 0` rotates the title back to horizontal, and `vjust = 1` moves it to the top of the axis. `hjust = 1` right-aligns it. However, when the y-axis title is set using `labs()` it always sits to the left. I would prefer it to be positioned directly above the family names. One option is to use `labs(tag = )`. A tag can be positioned by coordinates (within the theme function), so you can place it directly above the family names rather than out at the plot edge. We will use `tag` instead of `y`:
 
 ```{r}
 #| message: false
@@ -189,7 +194,7 @@ p_labels <- p +
 p_labels
 ```
 
-`y = NULL` drops the axis title and `tag = "Family"` puts the text back as a tag, which by default lands in the top left corner. The position of the tag is controlled by `plot.tag.position` in the `theme()` function. The `theme()` function will be the last layer we add to the plot (see below). This tag sits on top of whatever is underneath, which means it will overlap your legend or your tiles if the coordinates are off.
+`y = NULL` drops the axis title and `tag = "Family"` puts the text back as a tag, which by default lands in the top left corner. The position of the tag is controlled by `plot.tag.position` in the `theme()` function. The `theme()` function will be the last layer we add to the plot (see below), which is when we'll reposition the tag. This tag sits on top of whatever is underneath, which means it will overlap your legend or your tiles if the coordinates are off.
 
 Many figures in publications stop there, using the default formatting settings. However, to make your plot eye-catching and easy to read, choose colours wisely and declutter.
 
@@ -239,9 +244,9 @@ ggplot(my_data, aes(x = category, y = value, fill = category)) +
     scale_fill_manual(values = custom_colors)
 ```
 
-Naming each colour means you don't have to worry about the order the categories come out in. Note that the aesthetic you map has to match the scale, so `fill = category` needs `scale_fill_manual()`. If you were colouring points or lines you'd map `colour` and use `scale_colour_manual()` instead.
+If you were colouring points or lines you'd use `scale_colour_manual()` instead.
 
-Back to our heatmap. You'll notice that where `n_contigs = 0` the tile was coloured light yellow (as per the palette). However, you may want a value of zero to have either no colour or be set to the plot background colour. There are multiple ways to change this. The first option is to set limits within the `scale_fill_distiller()` or `scale_fill_gradient()` function and assign white (or the background colour of your plot) to `na.value`.
+Back to our heatmap. You'll notice that where `n_contigs = 0` the tile was coloured light yellow (as per the palette). However, you may want a value of zero to have either no colour or be set to the plot background colour. There are multiple ways to change this. The first option is to set limits within the `scale_fill_distiller()` function and assign white (or the background colour of your plot) to `na.value`.
 
 ```{r}
 #| message: false
@@ -259,7 +264,7 @@ p_colour <- p_labels +
 p_colour
 ```
 
-Setting `limits = c(1, 10)` means the palette now starts at one rather than zero. Anything below the limits is treated as out of range and picks up `na.value`, so the zeros come out white. This is the version we'll carry forward.
+Setting `limits = c(1, 10)` means the palette now starts at one rather than zero. Anything below the limits is treated as out of range and picks up `na.value`, so the zeros come out white. This is the version we'll carry forward. I have also included the argument `breaks` to change the numbers underneath the scale bar (if we didn't change these we'd get 2.5, 5.0, 7.5 and 10.0).
 
 Another option is to convert the zeros to `NA` first then set the argument `na.value` to white (the default colour is `grey50`). If your dataset already has missing values instead of the zeros, you only need to add the `na.value` argument.
 
@@ -306,8 +311,6 @@ p_labels +
     )
 ```
 
-
-
 You may have noticed when using ggplot2 that the grey panel background is a ggplot2 default. We can see the outline of it around the heatmap. To remove this grey background we will use `theme_minimal()`. There are many other themes that you could try out that are also quite clean e.g. `theme_light()` and `theme_classic()`
 
 ```{r}
@@ -342,18 +345,19 @@ p_final <- p_theme +
         legend.location = "panel",
         legend.direction = "horizontal",
         legend.title.position = "top",
-        legend.title = element_text(color = text_col, family = font, hjust = 0),
+        legend.title = element_text(color = text_col, family = font),
         legend.text = element_text(color = label_col, family = font),
-        plot.tag = element_text(hjust = 0, color = text_col, family = font),
+        plot.tag = element_text(
+            hjust = 0,
+            color = text_col, family = font),
         plot.tag.position = c(0.05, 0.87),
         plot.tag.location = "plot",
         plot.margin = margin(10, 10, 10, 10),
-        axis.text = element_text(color = label_col, family = font, size = rel(0.8)),
+        axis.text.y = element_text(colour = label_col, family = font, size = rel(0.8)),
         axis.text.x = element_text(angle = 45, hjust = 1),
-        panel.grid = element_blank(),
+        axis.title.x = element_text(colour = label_col, family = font),
         panel.background = element_rect(fill = bg_col, color = bg_col),
-        plot.background = element_rect(fill = bg_col, color = bg_col),
-        axis.ticks = element_blank()
+        plot.background = element_rect(fill = bg_col, color = bg_col)
     )
 
 p_final
@@ -361,11 +365,14 @@ p_final
 
 Here are some descriptions of what's been included in the `theme()` function:
 
-The legend arguments put the key at the top, left aligned and horizontal. `legend.location` decides what it lines up against: `"panel"` aligns it with the left edge of the tiles, while `"plot"` aligns it with the far left edge of the whole plot, out where the family names and the tag sit. `legend.title.position = "top"` moves "Number of contigs" above the colour bar rather than leaving it alongside, which reads better on a wide horizontal legend and stops the title squeezing the bar. The `breaks` argument in `scale_fill_distiller()` sets which numbers get labelled underneath it.
+`legend.position = "top"` puts the key at the top
+`legend.justification = "left"` left aligns the legend
+`legend.location = "panel"` aligns the legend with the left edge of the tiles.
+`legend.location = "plot"` would align it with the far left edge of the whole plot, where the family names and the tag sit. `legend.title.position = "top"` moves "Number of contigs" above the colour bar rather than leaving it alongside.
 
-`panel.grid = element_blank()` and `axis.ticks = element_blank()` remove marks a heatmap doesn't need. The tiles already show you where everything is.
+`axis.text` is the tick labels, so the gene names (`axis.text.x`) and family names (`axis.text.y`) , while `axis.title.x` is the name of the x axis. As previouslyIn these three arguments I have used element_text to set the font and colour. We only need `axis.title.x` here because the y-axis title was dropped when we swapped it for the tag, so there's no `axis.title.y` left to style.`axis.text.x` is angles the x axis labels at 45 degrees. Generally I prefer my x axis labels to be horizontal, but some of the gene names are quite long and won't easily fit. 
 
-`axis.text.x` is angled at 45 degrees. Generally I prefer my x axis labels to be horizontal, but some of the gene names are quite long and won't easily fit. Angled labels are easier to read than vertical ones.
+
 
 One last thing: the plot in the plot pane is drawn at whatever size the pane happens to be. Drag the pane wider and the text gets relatively smaller, make it narrower and your labels start colliding. You end up tuning text sizes against a moving target.
 
@@ -419,10 +426,10 @@ ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
         axis.text.x = element_text(angle = 45, hjust = 1),
         axis.title.x = element_text(colour = label_col, family = font),
         panel.background = element_rect(fill = bg_col, color = bg_col),
-        plot.background = element_rect(fill = bg_col, color = bg_col),
-        )
+        plot.background = element_rect(fill = bg_col, color = bg_col)
+    )
 
-    gg_stop_recording()
+gg_stop_recording()
 ```
 
 To save the file use `ggsave()`:
@@ -432,7 +439,7 @@ To save the file use `ggsave()`:
 
 ggsave(
     "output/arg_heatmap.png",
-    p_final,
+    #p_final,
     width = 12,
     height = 7,
     dpi = 300,
