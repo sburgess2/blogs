@@ -71,7 +71,7 @@ df <- read_csv("data/arg_contigs.csv")
 head(df)
 ```
 
-The first step is to tell R/ggplot2 what data you're using. Here, within the `ggplot()` function, we're telling R to use the data frame called `df`, that `gene` goes on the x-axis, `family` goes on the y-axis, and that `fill` specifies each tile will be coloured by `n_contigs`. When you run this you'll see the plot panel with the axes drawn but no data plotted.
+The first step is to specify what data you're using. Here, within the `ggplot()` function, we're using the data frame called `df`, and we are mapping `gene` to the x-axis, `family` to the y-axis, and `fill` specifies that each tile will be coloured by `n_contigs`. When you run this you'll see the plot panel with the axes drawn but no data plotted.
 
 ```{r}
 #| message: false
@@ -80,19 +80,19 @@ The first step is to tell R/ggplot2 what data you're using. Here, within the `gg
 ggplot(data = df, aes(x = gene, y = family, fill = n_contigs))
 ```
 
-To actually plot the data we need to tell R what type of plot we want. We do this by adding a geom layer with `+`. There is a whole family of geoms, all starting with `geom_`, and if you start typing that in your editor you'll get a list of options. There are a lot of different geoms, plus many extensions you can use with ggplot2 (you can find a list [here](https://exts.ggplot2.tidyverse.org/gallery/)). We're generating a heatmap, so we'll use `geom_tile()`. Other packages provide their own heatmap functions too. Check out these blogs [here](https://r-graph-gallery.com/215-the-heatmap-function.html) and [here](https://www.datanovia.com/learn/machine-learning/clustering/heatmap) if you want to learn more about other heatmap functions.
+To actually plot the data we need specify what type of plot we want. We do this by adding a geom layer with `+`. There is a whole family of geoms, all starting with `geom_`, and if you start typing that in your editor you'll get a list of options. There are a lot of different geoms, plus many extensions you can use with ggplot2 (you can find a list [here](https://exts.ggplot2.tidyverse.org/gallery/)). We're generating a heatmap, so we'll use `geom_tile()`. Other packages provide their own heatmap functions too. Check out these blogs [here](https://r-graph-gallery.com/215-the-heatmap-function.html) and [here](https://www.datanovia.com/learn/machine-learning/clustering/heatmap) if you want to learn more about other heatmap functions.
 
 ```{r}
 #| message: false
 #| warning: false
 
-ggplot(data = df, aes(x = gene, y = family, fill = n_contigs)) +
+ggplot(data = df, mapping = aes(x = gene, y = family, fill = n_contigs)) +
     geom_tile()
 ```
 
 We now have a basic heatmap. Before we continue, let's have a look at some of the arguments you can use within `geom_tile()`. You can find out more about how to use a function and its arguments by typing `?` followed by the function name into the console, for example `?geom_tile`.
 
-Generally, ggplot2 geoms share the same set of core arguments e.g. `mapping`, `data`, `show.legend`, `inherit.aes` and a few others. These are always listed in the help file (but sometimes they're tricky to follow). The `mapping` and `data` arguments are only needed if a layer is doing something different from the rest of the plot; otherwise they're specified once in `ggplot()`. Generally for a `geom_tile()` you won't need to change the defaults for these core arguments. However, you may want to use `inherit.aes = FALSE` if you don't want to inherit the plot data from `ggplot()` or use `show.legend = FALSE` if you do not want a legend.
+Generally, ggplot2 geoms share the same set of core arguments e.g. `mapping`, `data`, `show.legend`, `inherit.aes` and a few others. These are always listed in the help file (but sometimes they're tricky to follow). The `mapping` and `data` arguments can be specified in the ggplot() function or in the geom function. If a layer is doing something different from the rest of the plot; otherwise they're specified once in `ggplot()`. Generally for a `geom_tile()` you won't need to change the defaults for these core arguments. However, you may want to use `inherit.aes = FALSE` if you don't want to inherit the plot data from `ggplot()` or use `show.legend = FALSE` if you do not want a legend.
 
 The things that you are more likely to want to change in `geom_tile()` are passed through `...`, so they don't appear as named arguments, which is also why the help file can be confusing to read. For example, aesthetics such as those listed below.
 
@@ -354,7 +354,7 @@ p_final <- p_theme +
         plot.tag.location = "plot",
         plot.margin = margin(10, 10, 10, 10),
         axis.text.y = element_text(colour = label_col, family = font, size = rel(0.8)),
-        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.x = element_text(colour = label_col, family = font, size = rel(0.8),angle = 45, hjust = 1),
         axis.title.x = element_text(colour = label_col, family = font),
         panel.background = element_rect(fill = bg_col, color = bg_col),
         plot.background = element_rect(fill = bg_col, color = bg_col)
@@ -366,23 +366,26 @@ p_final
 Here are some descriptions of what's been included in the `theme()` function:
 
 - `legend.position = "top"` puts the key at the top of the plot.
-- `legend.justification = "left"` left aligns it instead of centring it.
-- `legend.location = "panel"` lines it up with the left edge of the tiles. Using `"plot"` would line it up with the far left edge of the whole plot, where the family names and the tag sit.
-- `legend.direction = "horizontal"` lays the colour bar out sideways, which suits a wide heatmap because it doesn't eat width the tiles could be using.
+- `legend.justification = "left"` left aligns the legend.
+- `legend.location = "panel"` lines it up with the left edge of the tiles. 
+- `legend.direction = "horizontal"` lays the colour bar out sideways.
 - `legend.title.position = "top"` moves "Number of contigs" above the colour bar rather than leaving it alongside.
 - `legend.title` and `legend.text` set the font and colour of the legend title and the numbers underneath it, using `element_text()`.
-- `plot.tag` sets the font and colour of the tag, which is standing in for our y-axis title.
-- `plot.tag.position = c(0.05, 0.87)` places the tag 5% in from the left and 87% of the way up. Both numbers need nudging by eye, and they'll need revisiting if you change the figure dimensions.
+- `plot.tag` sets the font and colour of the tag, which we are using for our y-axis title.
+- `plot.tag.position = c(0.05, 0.87)` places the tag 5% in from the left and 87% of the way up.
 - `plot.tag.location = "plot"` measures those coordinates against the whole plot rather than the panel.
 - `plot.margin = margin(10, 10, 10, 10)` sets the space around the outside of the plot, clockwise from the top.
-- `axis.text` is the tick labels, so the gene names and the family names. Setting it here covers both axes at once.
-- `axis.text.x = element_text(angle = 45, hjust = 1)` angles the gene names at 45 degrees. Generally I prefer my x axis labels to be horizontal, but some of the gene names are quite long and won't easily fit. `hjust = 1` keeps the end of each label next to the tile it belongs to.
-- `axis.title.x` is the name of the axis itself, which is a separate element from `axis.text`. We only need the `.x` version because the y-axis title was dropped when we swapped it for the tag, so there's no `axis.title.y` left to style.
-- `panel.background` and `plot.background` set the fill behind the tiles and behind the whole plot. Both use `element_rect()` rather than `element_text()` because they're rectangles rather than text.
+- `axis.text.y` and `axis.text.x` are the tick labels, so the the family names and gene names. The font, colour and size of the y axis labels are set using `element_text()`. `angle = 45` angles the gene names at 45 degrees. Generally I prefer my x axis labels to be horizontal, but some of the gene names are quite long and won't easily fit. 
+- `axis.title.x` is the name of the axis itself. We only need the `.x` version because the y-axis title was dropped when we swapped it for the tag.
+- `panel.background` and `plot.background` set the fill behind the tiles and behind the whole plot. 
 
-One last thing: the plot in the plot pane is drawn at whatever size the pane happens to be. Drag the pane wider and the text gets relatively smaller, make it narrower and your labels start colliding. You end up tuning text sizes against a moving target.
+You may be asking whether it's a nuisance writing out all that `theme()` code every time. It is, and there are a few ways to avoid it:
 
-To view your plot at the same dimensions it will be exported at, use the camcorder package. `gg_record()` sets a fixed canvas, and from then on your plot is generated in the viewer (instead of the plot window) at those exact dimensions:
+- Write a script template, as described by [Nicola Rennie](https://nrennie.rbind.io/blog/script-templates-r/).
+- Build your own custom theme, described [here](https://rfortherestofus.com/2025/04/ggplot2-theme) by R for the Rest of Us.
+- If you use Claude, write the whole thing up as a skill so it applies your house style for you.
+
+One last thing: the plot in the plot pane is drawn at whatever size the pane happens to be. When you drag the pane wider the plot exapands to fill the pane. To view your plot at the same dimensions it will be exported, use the `gg_record()` function from the camcorder package:
 
 ```{r}
 #| eval: false
@@ -453,12 +456,7 @@ ggsave(
 )
 ```
 
-You may be asking whether it's a nuisance writing out all that `theme()` code every time. It is, and there are a few ways to avoid it:
 
-- Write a script template, as described by [Nicola Rennie](https://nrennie.rbind.io/blog/script-templates-r/).
-- Build your own custom theme, described [here](https://rfortherestofus.com/2025/04/ggplot2-theme) by R for the Rest of Us.
-- If you use Claude, write the whole thing up as a skill so it applies your house style for you.
 
-Any of those turns the theme block into something you write once rather than every time.
 
-So that's how I build up a plot. Most of those lines had nothing to do with the data, which is what I'd want my PhD student to take away. Getting a heatmap on screen takes two lines. The formatting afterwards is where the afternoon goes.
+So that's how I build up a plot. It's easy to get a basic heatmap on your screen, but it's the formatting afterwards that can take the time.
