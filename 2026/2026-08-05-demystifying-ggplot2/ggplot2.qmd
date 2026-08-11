@@ -90,11 +90,13 @@ ggplot(data = df, mapping = aes(x = gene, y = family, fill = n_contigs)) +
     geom_tile()
 ```
 
-We now have a basic heatmap. Before we continue, let's have a look at some of the arguments you can use within `geom_tile()`. You can find out more about how to use a function and its arguments by typing `?` followed by the function name into the console, for example `?geom_tile`.
+We now have a basic heatmap. Before we continue, let's have a look at what you can set within `geom_tile()`. You can find out more about any function by typing `?` followed by its name into the console, for example `?geom_tile`.
 
-Generally, ggplot2 geoms share the same set of core arguments e.g. `mapping`, `data`, `show.legend`, `inherit.aes` and a few others. These are always listed in the help file (but sometimes they're tricky to follow). The `mapping` and `data` arguments can be specified in the ggplot() function or in the geom function. If a layer is doing something different from the rest of the plot; otherwise they're specified once in `ggplot()`. Generally for a `geom_tile()` you won't need to change the defaults for these core arguments. However, you may want to use `inherit.aes = FALSE` if you don't want to inherit the plot data from `ggplot()` or use `show.legend = FALSE` if you do not want a legend.
+First lets look at the geom's arguments. Every geom shares a similar set: `mapping`, `data`, `stat`, `position`, `show.legend`, `inherit.aes` and a few others. These are the ones listed in the usage section at the top of the help file. `mapping` and `data` can be specified either in the `ggplot()` function or in the geom itself. If a layer is doing something different from the rest of the plot, specify them in that individual geom. For more on layers see [chapter 13](https://ggplot2-book.org/layers.html) of the ggplot2 book.
 
-The things that you are more likely to want to change in `geom_tile()` are passed through `...`, so they don't appear as named arguments, which is also why the help file can be confusing to read. For example, aesthetics such as those listed below.
+Generally for a `geom_tile()` you won't need to change the defaults for the core arguments. However, you may want to use `inherit.aes = FALSE` if you don't want to inherit the plot data from `ggplot()` or use `show.legend = FALSE` if you do not want a legend.
+
+Next we'll look at the geom's aesthetics. These are the visual properties of the thing being drawn: the fill colour of a tile, the colour of its border, how transparent it is. What confused me for a long time is that aesthetics can be set in two places. Inside `aes()` they are mapped, so the value comes from a column in your data, like `fill = n_contigs`. Written directly in the geom they are fixed, so every tile gets the same value, like `colour = "white"`. These are the ones you're most likely to want to change in `geom_tile()`:
 
 ```{r}
 #| message: false
@@ -132,7 +134,7 @@ tribble(
   )
 ```
 
-Getting the hang of the different arguments is tricky. Part of it is practice, but part of it is accepting that you will need to look them up. I always do. Also ask yourself whether you really need to understand every argument. In this day and age of AI, do you really need to understand every line of code, especially if coding isn't your thing?
+Getting the hang of the different arguments and aesthetics is tricky. Part of it is practice, but part of it is accepting that you will need to look them up. I always do. Also ask yourself whether you really need to understand every argument. In this day and age of AI, do you really need to understand every line of code, especially if coding isn't your thing?
 
 For this heatmap we're going to use the colour and linewidth aesthetics.
 
@@ -177,7 +179,7 @@ p_labels +
     )
 ```
 
-`angle = 0` rotates the title back to horizontal, and `vjust = 1` moves it to the top of the axis. `hjust = 1` right-aligns it. However, when the y-axis title is set using `labs()` it always sits to the left. I would prefer it to be positioned directly above the family names. One option is to use `labs(tag = )`. A tag can be positioned by coordinates (within the theme function), so you can place it directly above the family names rather than out at the plot edge. We will use `tag` instead of `y`:
+`angle = 0` rotates the title back to horizontal, and `vjust = 1` moves it to the top of the axis. `hjust = 1` right-aligns it. However, when the y-axis title is set using `labs()` it always sits to the left. I would prefer it to be positioned directly above the family names. One option is to use `labs(tag = )`. We will use `tag` instead of `y`:
 
 ```{r}
 #| message: false
@@ -198,9 +200,9 @@ p_labels
 
 Many figures in publications stop there, using the default formatting settings. However, to make your plot eye-catching and easy to read, choose colours wisely and declutter.
 
-Let's change the colour palette to one that makes it easier to distinguish between the low and high values. You can either use a ready-made palette or create your own. The R Graph Gallery's [colour palette finder](https://r-graph-gallery.com/color-palette-finder) has a huge variety to choose from. If you find that list a bit overwhelming to look through, I'd recommend starting with the viridis palettes or the ColorBrewer palettes. For this example I'll use a ColorBrewer palette.
+Let's change the colour palette to one that makes it easier to distinguish between the low and high values. You can either use a defined palette or create your own. The R Graph Gallery's [colour palette finder](https://r-graph-gallery.com/color-palette-finder) has a huge variety to choose from. If you find that list a bit overwhelming to look through, I'd recommend starting with the viridis palettes or the ColorBrewer palettes. For this example I'll use a ColorBrewer palette.
 
-One thing to watch here: our tiles are coloured using `fill`, so we need a `scale_fill_*` function rather than `scale_colour_*`. Because `n_contigs` is a continuous variable we also need `scale_fill_distiller()`. `scale_fill_brewer()` looks like the obvious choice, but it only works with discrete variables. Within the `scale_fill_distiller()` argument we will use the arguments `palette` to specify which palette we want to use (you can find a list of them [here](https://r-graph-gallery.com/38-rcolorbrewers-palettes.html)), and `direction` to specify the order where `direction = 1` is the default order of the palette and `direction = -1` reverses the order.
+One thing to watch here: our tiles are coloured using `fill`, so we need a `scale_fill_*` function rather than `scale_colour_*`. Because `n_contigs` is a continuous variable we also need `scale_fill_distiller()` (`scale_fill_brewer()` only works with discrete variables). Within the `scale_fill_distiller()` argument we will use the arguments `palette` to specify which palette we want to use (you can find a list of them [here](https://r-graph-gallery.com/38-rcolorbrewers-palettes.html)), and `direction` to specify the order where `direction = 1` is the default order of the palette and `direction = -1` reverses the order.
 
 ```{r}
 #| message: false
@@ -291,22 +293,6 @@ p_labels +
     scale_fill_distiller(
         palette = "YlGnBu",
         direction = 1,
-        na.value = "white"
-    )
-```
-
-Alternatively you can use a binned scale. In other words, assign each value to a bin using the `scale_fill_stepsn()` function.
-
-```{r}
-#| message: false
-#| warning: false
-#| eval: false
-
-p_labels +
-    scale_fill_stepsn(
-        colours = c("#EDF8B1", "#7FCDBB", "#225EA8", "#253494"),
-        breaks = c(2, 4, 6, 8),
-        limits = c(1, 10),
         na.value = "white"
     )
 ```
