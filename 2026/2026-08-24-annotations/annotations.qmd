@@ -1,0 +1,139 @@
+---
+title: "Adding annotations"
+author: "Sara Burgess"
+format: html
+editor: visual
+---
+
+## Adding annotations to your plots
+
+I think one of the trickiest thing about puttig together a data visualisation in R is annotating the plot. Annotations can really help your reader interpret the graph / take off some of the cognitive load, highlight a certain observation or group of observations. There are multiple ways to do this. Using the following functions:
+
+
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+
+library(tidyverse)
+
+tuesdata <- tidytuesdayR::tt_load("2026-02-03")
+
+edible_plants <- tuesdata$edible_plants
+```
+
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+
+edible_tidy <- edible_plants %>%
+
+  select(
+    taxonomic_name,
+    common_name,
+    cultivation,
+    temperature_class,
+
+    temperature_growing,
+    days_harvest
+  ) %>%
+
+  filter(
+    !cultivation == "Miscellaneous",
+
+    !days_harvest == "continual"
+  ) %>%
+
+  drop_na() %>%
+
+  separate(
+    temperature_growing,
+
+    into = c("temp_min", "temp_max"),
+
+    sep = "-",
+    fill = "right",
+    remove = FALSE
+  ) %>%
+
+  separate(
+    days_harvest,
+
+    into = c("days_min", "days_max"),
+
+    sep = "-",
+    fill = "right",
+    remove = FALSE
+  )
+
+write_csv("blogs/2026/2026-08-24-annotations/data/edible_plants_tidy.csv")
+```
+
+Lets use a TidyTuesday dataset (from the ...) to illustrate how these different functions work. 
+
+First load the libraries that we'll be using:
+
+```{r}
+#| message: false
+#| warning: false
+
+library(tidyverse)
+```
+
+I've generated a tidy version of the edible plants dataset (the orignal dataset can be found here). You can load the tidy dataset from here:
+
+```{r}
+#| message: false
+#| warning: false
+#| eval: false
+
+df <- read_csv(
+  "https://raw.githubusercontent.com/sburgess2/blogs/main/2026/2026-08-24-annotations/data/edible_plants_tidy.csv"
+)
+```
+
+First we'll generate a a basic bar plot. 
+```{r}
+#| warning: false
+#| message: false
+
+ggplot(
+  df_all,
+
+  aes(
+    x = factor(common_name, levels = veg_levels_rev),
+
+    y = days_min
+  )
+) +
+
+  geom_col(fill = light_gr) +
+
+  geom_text(aes(label = days_min), hjust = 1.5, size = 2, color = "#ffffff") +
+
+  theme_minimal(base_family = font, base_size = 7)
+```
+
+```{r}
+#| warning: false
+#| message: false
+
+```
+
+Using coord_cartesian(clip = "off") allows annotations to be drawn outside of the plot. However, when using geom_text with treemaps if the coordinates are outside the plot it will expand the treemap to fit. Therefore for annotations outside the use geom_textbox where each annotation uses a separate dataframe. See treemap.R and 03_plotting.R for examples.
+
+geom_textbox and annotate() use mm as the size by default. 10pt = 3.528 mm. They can not use unit.size = "pt" to change to put
+
+```         
+size = 3.528, #annotate doesn't have an option to change to pt. 
+```
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
