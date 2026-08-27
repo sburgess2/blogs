@@ -67,9 +67,100 @@ edible_tidy <- edible_plants %>%
     sep = "-",
     fill = "right",
     remove = FALSE
+  ) |>
+  mutate(across(ends_with(c("_min", "_max")), as.numeric)) |>
+  mutate(
+    common_name = recode(
+      common_name,
+
+      "Pea" = "Peas",
+
+      "Beans (Runner)" = "Beans climbing/snake",
+
+      "Beans (French)" = "Beans dwarf/bush",
+
+      "Beans (Broad)" = "Broad bean",
+
+      "Cabbage (Spring)" = "Cabbage loose-headed",
+
+      "Zucchini or Courgette" = "Zucchini",
+
+      "Cucumber" = "Cucumber",
+
+      "Melon" = "Rockmelon",
+
+      "Water melon" = "Watermelon",
+
+      "Lettuce (Headed)" = "Lettuce",
+
+      "Artichoke (Globe)" = "Artichokes globe",
+
+      "Aubergine" = "Aubergine",
+
+      "Beans (Borlotti)" = "Beans dwarf/bush",
+
+      "Beetroot" = "Beetroot",
+
+      "Bok Choy" = "Bok Choy",
+
+      "Cabbage (Autumn red)" = "Cabbage tight-headed",
+
+      "Cabbage (Autumn)" = "Cabbage tight-headed",
+
+      "Cabbage (Chinese)" = "Chinese cabbage",
+
+      "Cabbage (Spring red)" = "Cabbage loose-headed",
+
+      "Cabbage (Summer red)" = "Cabbage tight-headed",
+
+      "Cabbage (Summer)" = "Cabbage tight-headed",
+
+      "Chilli Pepper" = "Chilli peppers",
+
+      "Fennel" = "Fennel",
+
+      "Mangetout" = "Mangetout",
+
+      "Onion" = "Onion",
+
+      "Parsnip" = "Parsnip",
+
+      "Bell Pepper" = "Bell peppers",
+
+      "Potatoes (Main crop)" = "Potato",
+
+      "Squash (Summer)" = "Summer squash",
+
+      "Squash (Winter)" = "Squash",
+
+      "Tomato (Regular)" = "Tomato"
+    )
+  ) %>%
+
+  distinct() %>%
+
+  filter(
+    !common_name == "Cabbage loose-headed" &
+      !cultivation == "Legume" &
+      !common_name == "Brussels Sprouts"
   )
 
-write_csv("blogs/2026/2026-08-24-annotations/data/edible_plants_tidy.csv")
+write_csv(
+  edible_tidy,
+  "2026/2026-08-24-annotations/data/edible_plants_tidy.csv"
+)
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+#To run the line below directly in the console use
+#setwd(here::here("2026", "2026-08-24-annotations"))
+edible_tidy <- read_csv(
+  "2026/2026-08-24-annotations/data/edible_plants_tidy.csv"
+)
 ```
 
 Lets use a TidyTuesday dataset (from the ...) to illustrate how these different functions work. 
@@ -90,33 +181,120 @@ I've generated a tidy version of the edible plants dataset (the orignal dataset 
 #| warning: false
 #| eval: false
 
-df <- read_csv(
+edible_tidy <- read_csv(
   "https://raw.githubusercontent.com/sburgess2/blogs/main/2026/2026-08-24-annotations/data/edible_plants_tidy.csv"
 )
 ```
 
-First we'll generate a a basic bar plot. 
+First we'll generate a bar plot. 
 ```{r}
 #| warning: false
 #| message: false
 
-ggplot(
-  df_all,
-
+p <- ggplot(
+  data = edible_tidy,
   aes(
-    x = factor(common_name, levels = veg_levels_rev),
-
-    y = days_min
+    y = fct_reorder(common_name, days_min), #Reorder common_name by days_min
+    x = days_min
   )
 ) +
-
-  geom_col(fill = light_gr) +
-
-  geom_text(aes(label = days_min), hjust = 1.5, size = 2, color = "#ffffff") +
-
-  theme_minimal(base_family = font, base_size = 7)
+  geom_col(fill = "#ddd69e") +
+  labs(
+    y = NULL,
+    subtitle = "Minimum number of days to harvest",
+    x = "Common name"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title.position = "plot", #align subtile to the plot
+    panel.grid = element_blank() #remove gridlines
+  )
 ```
 
+Annotations can be a great way to highlight particular observations. Lets use lettuce as an example. First we'll try adding one annotation using `geom_text()`.
+```{r}
+#| warning: false
+#| message: false
+
+p +
+  geom_text(
+    y = "Lettuce",
+    x = 45,
+    label = "Lettuce has a wide temperature growth range",
+    size = 4.23,
+    hjust = 0
+  )
+```
+
+Perhaps you may have noticed that the annotation looks a bit fuzzy. This is because when you use `geom_text()` it's inheriting the data from the dataframe `edible_tidy`. There are 32 observations, so the text `Lettuce has a wide temperature growth range` gets placed onto the plot 32 times. We will come back to geom_text but for now lets look at another way to place to this annotation using `annotate()`
+
+```{r}
+#| warning: false
+#| message: false
+
+p +
+  annotate(
+    geom = "text",
+    y = "Lettuce",
+    x = 45,
+    label = "Lettuce has a wide temperature growth range",
+    size = 3.53,
+    hjust = 0
+  )
+```
+
+Now our label is cleaning looking. Lets look at some of the arguments we've used. First we've specified the type of geom to use. In this case we want to add a text annotation, but `annotate()` can also be used for adding shapes and lines. `x` and `y` are used for specifying the position of the annotation, the size of the text is specified in mm. 10pt is 3.53 mm. `hjust` is used to horizontally align the text. By default this is set to 0.5, which centres the text. 0 left aligns the text and 1 right alighns the text.
+
+Next lets look at how we can use annotate() to add a line or an arrow. 
+```{r}
+#| warning: false
+#| message: false
+
+p +
+  annotate(
+    geom = "text",
+    y = "Lettuce",
+    x = 60,
+    label = "Lettuce has a wide temperature growth range",
+    size = 3.53,
+    hjust = 0
+  ) +
+  annotate(
+    geom = "segment",
+    x = 60,
+    y = "Lettuce",
+    xend = 45,
+    yend = "Lettuce"
+  )
+```
+
+```{r}
+#| warning: false
+#| message: false
+
+p +
+  annotate(
+    geom = "text",
+    y = "Lettuce",
+    x = 60,
+    label = "Lettuce has a wide temperature growth range",
+    size = 3.53,
+    hjust = 0
+  ) +
+  annotate(
+    geom = "segment",
+    x = 60,
+    y = "Lettuce",
+    xend = 45,
+    yend = "Lettuce",
+    arrow = arrow(
+      length = unit(0.2, "cm"), #specifies the length of the arrowhead
+      type = "closed" #specifies the type of arrowhead
+    )
+  )
+```
+
+Note to self don't use geom_segment() as again it will plot one segment per observation unless you use a separate df. 
 ```{r}
 #| warning: false
 #| message: false
