@@ -9,8 +9,6 @@ editor: visual
 
 I think one of the trickiest thing about puttig together a data visualisation in R is annotating the plot. Annotations can really help your reader interpret the graph / take off some of the cognitive load, highlight a certain observation or group of observations. There are multiple ways to do this. Using the following functions:
 
-
-
 ```{r}
 #| warning: false
 #| message: false
@@ -22,7 +20,6 @@ tuesdata <- tidytuesdayR::tt_load("2026-02-03")
 
 edible_plants <- tuesdata$edible_plants
 ```
-
 
 ```{r}
 #| warning: false
@@ -142,8 +139,15 @@ edible_tidy <- edible_plants %>%
   filter(
     !common_name == "Cabbage loose-headed" &
       !cultivation == "Legume" &
-      !common_name == "Brussels Sprouts"
+      !common_name == "Brussels Sprouts" &
+      !common_name == "Potatoes (Early)" &
+      !common_name == "Tomato (Cherry)"
+  ) |>
+  mutate(
+    taxonomic_name = str_squish(str_remove(taxonomic_name, "\\(.*\\)")),
+    taxonomic_name = str_to_sentence(taxonomic_name)
   )
+
 
 write_csv(
   edible_tidy,
@@ -163,7 +167,7 @@ edible_tidy <- read_csv(
 )
 ```
 
-Lets use a TidyTuesday dataset (from the ...) to illustrate how these different functions work. 
+Lets use a TidyTuesday dataset (from the ...) to illustrate how these different functions work.
 
 First load the libraries that we'll be using:
 
@@ -172,6 +176,7 @@ First load the libraries that we'll be using:
 #| warning: false
 
 library(tidyverse)
+library(ggrepel)
 ```
 
 I've generated a tidy version of the edible plants dataset (the orignal dataset can be found here). You can load the tidy dataset from here:
@@ -186,7 +191,8 @@ edible_tidy <- read_csv(
 )
 ```
 
-First we'll generate a bar plot. 
+First we'll generate a bar plot.
+
 ```{r}
 #| warning: false
 #| message: false
@@ -198,7 +204,7 @@ p <- ggplot(
     x = days_min
   )
 ) +
-  geom_col(fill = "#ddd69e") +
+  geom_col(fill = "#55692f") +
   labs(
     y = NULL,
     subtitle = "Minimum number of days to harvest",
@@ -211,7 +217,75 @@ p <- ggplot(
   )
 ```
 
+Next we'll label each bar the actual value.
+
+```{r}
+#| warning: false
+#| message: false
+
+p_label <- p +
+  geom_text(
+    aes(label = days_min),
+    size = 4.23,
+    hjust = 1.5,
+    colour = "#ffffff"
+  )
+p_label
+```
+
+Instead of placing the values on the bar you could also use `geom_text_repel()` from the {ggrepl} package to add lines to point to each bar.
+
+```{r}
+#| warning: false
+#| message: false
+
+p_label <- p +
+  geom_text_repel(
+    aes(label = days_min),
+    size = 4.23,
+    hjust = 1,
+    colour = "black"
+  )
+p_label
+```
+
+For the example above I prefer using `geom_text()`. `geom_text_repel` is generally used when you have overlapping labels. As the name suggest it the labels repel each other so that they are placed in free space rather than overlapping. A better example of this is with a scatterplot.
+
+```{r}
+#| warning: false
+#| message: false
+
+p <- ggplot(
+  data = edible_tidy,
+  aes(
+    y = days_min,
+    x = temp_min,
+    label = common_name
+  )
+) +
+  geom_point(pch = 21, fill = "#55692f") +
+  labs(
+    y = NULL,
+    subtitle = "Minimum number of days to harvest",
+    x = "Minum growth temperature (°C)"
+  ) +
+  geom_text_repel(
+    size = 5,
+    box.padding = 0.5
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title.position = "plot" #align subtile to the plot
+    #panel.grid = element_blank() #remove gridlines
+  )
+
+p
+```
+
+For some other great examples of where geom_text_repel can be used see [this post](https://r-graph-gallery.com/package/ggrepel.html) on the r-graph-gallery.
+
 Annotations can be a great way to highlight particular observations. Lets use lettuce as an example. First we'll try adding one annotation using `geom_text()`.
+
 ```{r}
 #| warning: false
 #| message: false
@@ -245,7 +319,8 @@ p +
 
 Now our label is cleaning looking. Lets look at some of the arguments we've used. First we've specified the type of geom to use. In this case we want to add a text annotation, but `annotate()` can also be used for adding shapes and lines. `x` and `y` are used for specifying the position of the annotation, the size of the text is specified in mm. 10pt is 3.53 mm. `hjust` is used to horizontally align the text. By default this is set to 0.5, which centres the text. 0 left aligns the text and 1 right alighns the text.
 
-Next lets look at how we can use annotate() to add a line or an arrow. 
+Next lets look at how we can use annotate() to add a line or an arrow.
+
 ```{r}
 #| warning: false
 #| message: false
@@ -294,7 +369,69 @@ p +
   )
 ```
 
-Note to self don't use geom_segment() as again it will plot one segment per observation unless you use a separate df. 
+Note to self don't use geom_segment() as again it will plot one segment per observation unless you use a separate df.
+
+Other aesthetics can also be included as arguments in the annotate function. For example, changing the colour or transparency of the text or arrow.
+
+```{r}
+#| warning: false
+#| message: false
+
+p +
+  annotate(
+    geom = "text",
+    y = "Lettuce",
+    x = 60,
+    label = "Lettuce has a wide temperature growth range",
+    size = 3.53,
+    hjust = 0,
+    colour = "blue"
+  ) +
+  annotate(
+    geom = "segment",
+    x = 60,
+    y = "Lettuce",
+    xend = 45,
+    yend = "Lettuce",
+    alpha = 0.5,
+    arrow = arrow(
+      length = unit(0.2, "cm"), #specifies the length of the arrowhead
+      type = "closed" #specifies the type of arrowhead
+    )
+  )
+```
+
+You can also change the font or font face:
+
+```{r}
+#| warning: false
+#| message: false
+
+p +
+  annotate(
+    geom = "text",
+    y = "Potato",
+    x = 100,
+    label = "paste(italic('Phytophthora infestans'), ' can cause blight in potatoes and tomatoes')",
+    parse = TRUE,
+    size = 2.8224,
+    hjust = 0,
+    colour = "blue"
+  ) +
+  annotate(
+    geom = "segment",
+    x = 60,
+    y = "Lettuce",
+    xend = 46,
+    yend = "Lettuce",
+    alpha = 0.5,
+    arrow = arrow(
+      length = unit(0.2, "cm"),
+      type = "closed"
+    )
+  )
+```
+
 ```{r}
 #| warning: false
 #| message: false
