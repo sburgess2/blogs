@@ -233,40 +233,7 @@ p_label <- p +
 p_label
 ```
 
-`geom_text_repel` is generally used when you have overlapping labels. As the name suggest it the labels repel each other so that they are placed in free space rather than overlapping. A better example of this is with a scatterplot.
 
-```{r}
-#| warning: false
-#| message: false
-
-p <- ggplot(
-  data = edible_tidy,
-  aes(
-    y = days_min,
-    x = temp_min,
-    label = common_name
-  )
-) +
-  geom_point(pch = 21, fill = "#55692f") +
-  labs(
-    y = NULL,
-    subtitle = "Minimum number of days to harvest",
-    x = "Minum growth temperature (°C)"
-  ) +
-  geom_text_repel(
-    size = 5,
-    box.padding = 0.5
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title.position = "plot" #align subtile to the plot
-    #panel.grid = element_blank() #remove gridlines
-  )
-
-p
-```
-
-For some other great examples of where geom_text_repel can be used see [this post](https://r-graph-gallery.com/package/ggrepel.html) on the r-graph-gallery.
 
 Annotations can be a great way to highlight particular observations. Lets use lettuce as an example. First we'll try adding one annotation using `geom_text()`.
 
@@ -416,11 +383,80 @@ p +
   )
 ```
 
+However, annotate() does have its limitations and sometimes you many need to use geom_textbox() or geom_richtext(). In these cases you'll need to generate a separate dataframe with your annotations. 
 ```{r}
 #| warning: false
 #| message: false
 
+#Add geom_textbox code here
+
 ```
+
+```{r}
+#| warning: false
+#| message: false
+
+#Add geom_richtext code here
+
+```
+
+Add something here about how geom_dl() works and its use. 
+
+```{r}
+#| warning: false
+#| message: false
+
+#Add geom_dl code here
+
+```
+
+One of the trickiest things I find is getting the annotation in the correct place. Even using Claude or another AI tool doesn't always help. Suggest using the `I()` function or the package ggannotate, using camcorder to view your plot and making manual alterations to the x and y coordinates. 
+
+Add something here about Using coord_cartesian(clip = "off") allows annotations to be drawn outside of the plot. 
+
+```{r}
+#| warning: false
+#| message: false
+
+#Add example here of using an annotation outside of the plot.
+
+```
+
+
+`geom_text_repel` is generally used when you have overlapping labels. As the name suggest it the labels repel each other so that they are placed in free space rather than overlapping. A better example of this is with a scatterplot.
+
+```{r}
+#| warning: false
+#| message: false
+
+p <- ggplot(
+  data = edible_tidy,
+  aes(
+    y = days_min,
+    x = temp_min,
+    label = common_name
+  )
+) +
+  geom_point(pch = 21, fill = "#55692f") +
+  labs(
+    y = NULL,
+    subtitle = "Minimum number of days to harvest",
+    x = "Minum growth temperature (°C)"
+  ) +
+  geom_text_repel(
+    size = 5,
+    box.padding = 0.5
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title.position = "plot" #align subtile to the plot
+    #panel.grid = element_blank() #remove gridlines
+  )
+
+p
+```
+
+For some other great examples of where geom_text_repel can be used see [this post](https://r-graph-gallery.com/package/ggrepel.html) on the r-graph-gallery.
 
 Using coord_cartesian(clip = "off") allows annotations to be drawn outside of the plot. However, when using geom_text with treemaps if the coordinates are outside the plot it will expand the treemap to fit. Therefore for annotations outside the use geom_textbox where each annotation uses a separate dataframe. See treemap.R and 03_plotting.R for examples.
 
@@ -435,4 +471,7 @@ size = 3.528, #annotate doesn't have an option to change to pt.
 2 * 2
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+Finish summary table here:
+
+
+
