@@ -233,23 +233,7 @@ p_label <- p +
 p_label
 ```
 
-Instead of placing the values on the bar you could also use `geom_text_repel()` from the {ggrepl} package to add lines to point to each bar.
-
-```{r}
-#| warning: false
-#| message: false
-
-p_label <- p +
-  geom_text_repel(
-    aes(label = days_min),
-    size = 4.23,
-    hjust = 1,
-    colour = "black"
-  )
-p_label
-```
-
-For the example above I prefer using `geom_text()`. `geom_text_repel` is generally used when you have overlapping labels. As the name suggest it the labels repel each other so that they are placed in free space rather than overlapping. A better example of this is with a scatterplot.
+`geom_text_repel` is generally used when you have overlapping labels. As the name suggest it the labels repel each other so that they are placed in free space rather than overlapping. A better example of this is with a scatterplot.
 
 ```{r}
 #| warning: false
