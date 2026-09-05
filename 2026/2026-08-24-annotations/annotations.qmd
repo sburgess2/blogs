@@ -454,37 +454,6 @@ p +
 #| warning: false
 #| message: false
 
-edible_highlight <- edible_tidy |>
-  mutate(highlight = common_name %in% c("Potato", "Tomato"))
-
-p_highlight <- ggplot(
-  data = edible_highlight,
-  aes(
-    y = fct_reorder(common_name, days_min),
-    x = days_min,
-    fill = highlight
-  )
-) +
-  geom_col() +
-  scale_fill_manual(values = c("TRUE" = "#55692f", "FALSE" = "grey85")) +
-  guides(fill = "none") +
-  labs(
-    y = NULL,
-    subtitle = "Minimum number of days to harvest",
-    x = "Common name"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title.position = "plot",
-    panel.grid = element_blank()
-  )
-
-blight_box <- tibble(
-  x = 80,
-  y = "Watermelon",
-  label = "*Phytophthora infestans* can cause<br>blight in potatoes and tomatoes"
-)
-
 p +
   geom_richtext(
     data = blight_box,
