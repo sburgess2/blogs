@@ -5,7 +5,7 @@ format: html
 editor: visual
 ---
 
-I think one of the trickiest thing about generating a plot in R is annotating. Annotations can really help your reader interpret your graph and highlight a certain observation or group of observations. As with many things in R there are multiple ways to do this. In this blog I'll run through six functions that can be used for annotating.
+I think one of the trickiest things about generating a plot in R is annotating it. Annotations can really help your reader interpret your graph and highlight a certain observation or group of observations. As with many things in R there are multiple ways to do this. In this blog I'll run through six functions that can be used for annotating.
 
 ```{r}
 #| warning: false
@@ -219,7 +219,7 @@ p <- ggplot(
 
 ## Annotating every row of your data using `geom_text()`
 
-For this first example of annotating a plot we'll use `geom_text()` to label each bar with the actual value of "Minimum days to harvest".
+For this first example of annotating a plot we'll use `geom_text()` to label each bar with its minimum number of days to harvest.
 
 ```{r}
 #| warning: false
@@ -236,9 +236,9 @@ p_label <- p +
 p_label
 ```
 
-In this example, we've used `size` to specify the size of the text in mm, `hjust` to align the text to the right (by default this is set to 0.5, which centres the text, 0 left aligns the text and 1 right aligns the text), `nudge_x` to move the label to the left slightly so it's not right up against the edge of the bar, and `colour` to colour the text white.
+In this example, we've used `size` to specify the size of the text in mm, `hjust` to align the text to the right (by default this is set to 0.5, which centres the text; 0 left aligns it and 1 right aligns it), `nudge_x` to move the label to the left slightly so it's not right up against the edge of the bar, and `colour` to colour the text white.
 
-Annotations can also be a great way to highlight particular observations. Lets use lettuce as an example. First we'll try adding one annotation using `geom_text()`.
+Annotations can also be a great way to highlight particular observations. Let's use lettuce as an example. First we'll try adding one annotation using `geom_text()`.
 
 ```{r}
 #| warning: false
@@ -254,7 +254,7 @@ p +
   )
 ```
 
-Perhaps you may have noticed that the annotation looks a bit fuzzy. This is because when you use `geom_text()` it's inheriting the data from the dataframe `edible_tidy`. There are 32 observations, so the text `Lettuce has a wide temperature growth range` gets placed onto the plot 32 times. We will come back to geom_text but for now lets look at another way to place to this annotation using `annotate()`.
+Perhaps you may have noticed that the annotation looks a bit fuzzy. This is because when you use `geom_text()` it's inheriting the data from the dataframe `edible_tidy`. There are 30 observations, so the text `Lettuce has a wide temperature growth range` gets placed onto the plot 30 times. We will come back to `geom_text()`, but for now let's look at another way to place this annotation using `annotate()`.
 
 ## Single annotations using `annotate()`
 
@@ -273,11 +273,11 @@ p +
   )
 ```
 
-Now our label is cleaning looking. Lets look at some of the arguments we've used. First we've specified the type of geom to use using `geom = "text"`. In this example we want to add a text annotation, but `annotate()` can also be used for adding shapes and lines (see the example below). `x` and `y` are used for specifying the position of the annotation, again `size` is used (where 3.53 mm us 10pt) and `hjust` is used to align the text to the left.
+Now our label looks cleaner. Let's look at some of the arguments we've used. First we've specified the type of geom with `geom = "text"`. In this example we want to add a text annotation, but `annotate()` can also be used for adding shapes and lines (see the example below). `x` and `y` are used for specifying the position of the annotation, again `size` is used (where 3.53 mm is 10pt) and `hjust` is used to align the text to the left.
 
-Next lets look at how we can use annotate() to add a line or an arrow.
+Next we'll look at how `annotate()` can be used to add a line or an arrow.
 
-Using a line:
+A line:
 
 ```{r}
 #| warning: false
@@ -301,7 +301,7 @@ p +
   )
 ```
 
-Using an arrow:
+An arrow:
 
 ```{r}
 #| warning: false
@@ -329,9 +329,9 @@ p +
   )
 ```
 
-In the examples above `x` and `y` are used to specify the coordinates of the start of the line or arrow and `xend` and `yend` the end of the line or arrow. You could add a line with `geom_segment(),` but the same issue occurs that you get with `geom_text()` where you get one segment per row of the data, all stacked in the same place. Either use `annotate(geom = "segment", ...)` as above, or pass `geom_segment()` its own one-row data frame.
+In the examples above `x` and `y` are used to specify the coordinates of the start of the line or arrow and `xend` and `yend` the end of the line or arrow. You could add a line with `geom_segment()`, but it has the same problem as `geom_text()`: you get one segment per row of the data, all stacked in the same place. The alternatives are `annotate(geom = "segment", ...)` as above, or passing `geom_segment()` its own one-row data frame.
 
-Other aesthetics can also be included as arguments in the annotate function. For example, changing the colour or transparency of the text or arrow.
+Other aesthetics can also be included as arguments in `annotate()`, for example the colour or transparency of the text or arrow.
 
 ```{r}
 #| warning: false
@@ -361,7 +361,7 @@ p +
   )
 ```
 
-You can also change the font or font face:
+You can also italicise part of the label by writing it as a plotmath expression and setting `parse = TRUE`:
 
 ```{r}
 #| warning: false
@@ -374,14 +374,14 @@ p +
     x = 80,
     label = "paste(italic('Phytophthora infestans'), ' can cause blight in potatoes and tomatoes')",
     parse = TRUE,
-    size = 2.8224,
+    size = 3.53,
     hjust = 0,
     colour = "blue"
   ) +
   annotate(
     geom = "curve",
     x = 100,
-    y = 23 + 0.5,
+    y = 23 + 0.3,
     xend = 100,
     yend = "Potato",
     curvature = 0.3,
@@ -396,7 +396,7 @@ p +
   annotate(
     geom = "curve",
     x = 100,
-    y = 23 + 0.5,
+    y = 23 - 0.3,
     xend = 65,
     yend = "Tomato",
     curvature = -0.3,
@@ -413,26 +413,26 @@ Generally `annotate()` is fine for most annotations, but there are a few things 
 
 Formatting is limited to plotmath. The *Phytophthora infestans* label above works, but it's quite a long expression. For one italic word that's fine, but for multiple font face changes the code becomes very wordy.
 
-It won't wrap text. As you may have noticed in the above example the annotation is drawn on a single line, so because it's a long sentence it runs off the edge of the panel. You can break the line yourself with `\n`, but then every break has to be checked again whenever the plot changes size, `\n` also doesn't work with plotmath.
+It won't wrap text. As you may have noticed in the above example, the annotation is drawn on a single line, so a long sentence runs off the edge of the panel. You can break the line yourself with `\n`, but then every break has to be checked again whenever the plot changes size. `\n` also doesn't work with plotmath.
 
-You cannot place the text in a box with your own formatting.
+You cannot style a box separately from the text. `geom = "label"` will draw one, but its border colour comes from `colour`, which also sets the text colour.
 
-## Annotations with geom_richtext() and geom_textbox()
+## Annotations with `geom_richtext()` and `geom_textbox()`
 
-When plotmath isn't enough, the {ggtext} package gives you two geoms that can use Markdown and HTML.
+The {ggtext} package gives you two geoms that can use Markdown and HTML.
 
-Use `geom_richtext()` when the annotation is short but part of it needs different styling: an italic species name, a coloured word to match a colour in the plot, a superscript unit.
+`geom_richtext()` is the one to reach for when the annotation is short but part of it needs different styling: an italic species name, a coloured word to match a colour in the plot, a superscript unit.
 
-When using `geom_richtext()` or `geom_textbox()` each annotation gets its data frame, plus use `inherit.aes = FALSE` so it ignores the mapping set in `ggplot()`.
+When using `geom_richtext()` or `geom_textbox()`, each annotation gets its own data frame and `inherit.aes = FALSE` so that it ignores the mapping set in `ggplot()`.
 
 ```{r}
 #| warning: false
 #| message: false
 
 blight <- tibble(
-  x = 62,
+  x = 1,
   y = "Potato",
-  label = "*Phytophthora infestans* causes blight in potatoes and tomatoes"
+  label = "*Phytophthora infestans* causes blight in potatoes"
 )
 
 p +
@@ -448,27 +448,33 @@ p +
   )
 ```
 
-`fill = NA` and `label.colour = NA` strip off the background and border that `geom_richtext()` draws by default. Leave them out and you get a boxed label.
+Above we've used `fill = NA` and `label.colour = NA` to strip off the background and border that `geom_richtext()` draws by default. In the example below the annotation sits in a coloured box, and because `geom_richtext()` doesn't wrap text we've used `<br>` to break up the sentence.
 
 ```{r}
 #| warning: false
 #| message: false
 
+blight_textbox <- tibble(
+  x = 80,
+  y = "Watermelon",
+  label = "*Phytophthora infestans*<br>causes blight in <br>potatoes and tomatoes"
+)
+
 p +
   geom_richtext(
-    data = blight_box,
+    data = blight_textbox,
     aes(x = x, y = y, label = label),
     inherit.aes = FALSE,
-    size = 2.8224,
+    size = 3.53,
     hjust = 0,
-    colour = "grey20",
-    fill = NA,
-    label.colour = "#55692f"
+    fill = "#99A582",
+    label.colour = "#55692f",
+    colour = "#2b3418"
   ) +
   annotate(
     geom = "curve",
     x = 100,
-    y = 23 + 0.5,
+    y = 22 + 0.5,
     xend = 100,
     yend = "Potato",
     curvature = 0.3,
@@ -481,7 +487,7 @@ p +
   annotate(
     geom = "curve",
     x = 100,
-    y = 23 - 0.5,
+    y = 22 - 0.5,
     xend = 65,
     yend = "Tomato",
     curvature = -0.3,
@@ -493,24 +499,24 @@ p +
   )
 ```
 
-`geom_textbox()` is the one to use when the annotation contains multiple sentences. You can specify a `width` and it wraps the text to fit.
+I'd recommend using `geom_textbox()` when the annotation is long enough to need wrapping. You can specify a `width` and it wraps the text to fit.
 
 ```{r}
 #| warning: false
 #| message: false
 
-lettuce <- tibble(
-  x = 45,
-  y = "Lettuce",
-  label = "Lettuce has a wide temperature growth range, which makes it easier to grow."
+blight_wrapped <- tibble(
+  x = 80,
+  y = "Watermelon",
+  label = "*Phytophthora infestans* causes blight in potatoes and tomatoes"
 )
 
 p +
   geom_textbox(
-    data = lettuce,
+    data = blight_wrapped,
     aes(x = x, y = y, label = label),
     inherit.aes = FALSE,
-    size = 10 / .pt,
+    size = 3.53,
     width = unit(5, "cm"),
     hjust = 0,
     box.colour = "grey80",
@@ -518,17 +524,13 @@ p +
   )
 ```
 
-The argument that catches people out here is the difference between `hjust` and `halign`. `hjust` positions the whole box relative to `x`; `halign` aligns the text inside the box. So `hjust = 0` puts the left edge of the box at `x = 45`, and the text inside stays left-aligned.
+The thing that used to catch me out was the difference between `hjust` and `halign`. `hjust` positions the whole box relative to `x` and `halign` aligns the text inside the box.
 
-One thing `geom_textbox()` won't do is rotate to an arbitrary angle. It has an `orientation` argument that turns the box in 90° steps and nothing in between. If you need text on a diagonal, `geom_richtext()` takes an `angle` aesthetic.
+One thing `geom_textbox()` won't do is rotate the text to an arbitrary angle. It has an `orientation` argument that turns the box in 90° steps and nothing in between. If you need text on a diagonal, `geom_richtext()` takes an `angle` aesthetic.
 
-## Labelling groups directly with geom_dl()
+## Labelling groups directly with `geom_dl()`
 
-`geom_dl()` comes from the {directlabels} package and it solves a slightly different problem to everything above. Rather than you deciding where each label goes, you tell it which *strategy* to use and it works the positions out from the data when the plot is drawn.
-
-That strategy is the `method` argument. `method = "last.points"` puts one label at the end of each line, which is the classic way to delete the legend from a time series chart. `method = "smart.grid"` puts one label per group in the middle of that group's cloud of points, which suits scatterplots. Because a method is just a named recipe, the same one can be reused across different plots; the package documentation lists the rest.
-
-The reason to use it is nearly always the same. You have groups, and you want to get rid of the legend. A legend makes the reader look up a colour and then find their way back to the plot; a label sitting on the group saves them the trip.
+One function I hadn't used before writing this blog was `geom_dl()`. It comes from the {directlabels} package and is generally used for labelling data directly rather than using a legend. The `method` argument is used for specifying how the labels will be placed. For example, `method = "last.points"` puts one label at the end of each line, which works well for line graphs. In our example we will use `method = "smart.grid"` to put one label per group in the middle of that group's cloud of points.
 
 ```{r}
 #| warning: false
@@ -545,7 +547,7 @@ ggplot(
   geom_point(size = 2, alpha = 0.8) +
   geom_dl(
     aes(label = cultivation),
-    method = list("smart.grid", cex = 0.8)
+    method = "smart.grid"
   ) +
   scale_colour_brewer(palette = "Dark2") +
   guides(colour = "none") +
@@ -556,19 +558,17 @@ ggplot(
   theme_minimal()
 ```
 
-Two things to know before you commit to it. Text size is set with `cex` inside the method list rather than with `size`, and `cex` is a multiplier on the device's base font size, so `cex = 0.8` means 80% of whatever that happens to be. The bigger issue is that when a method puts a label somewhere you don't want it, there isn't much to grab hold of, because the positioning happens inside the package. For three or four series it's often quicker to filter the data yourself and use `geom_text()`.
-
 ## Getting the annotation in the right place
 
 This is the part I find hardest, and there isn't one trick that fixes it. Even asking Claude or another AI tool tends to produce coordinates that are roughly right and then need nudging anyway. Here are a few suggestions to help:
 
-Anchor the coordinate to the data rather than typing a number. A number is correct for exactly the data you had in front of you when you typed it, whereas something like `x = max(edible_tidy$days_min) * 1.05` still works after you add rows or swap the dataset.
+It helps to anchor the coordinate to the data rather than typing a number. A number is correct for exactly the data you had in front of you when you typed it, whereas something like `x = max(edible_tidy$days_min)` still works after you add rows or swap the dataset.
 
-`I()` handles anything that should sit in the same spot regardless of the scales. Wrapping a coordinate in it switches from data units to a proportion of the panel, so `x = I(0.05), y = I(0.95)` means 5% across and 95% up.
+`I()` can be used to switch from data units to a proportion of the panel, so `x = I(0.05), y = I(0.95)` means 5% across and 95% up.
 
-On a discrete axis you can pass either the level name (`y = "Lettuce"`) or a number. The numbers are the level positions, so `y = 12.5` sits halfway between the twelfth and thirteenth bar, which is useful for a label that refers to a group of bars rather than to one of them.
+On a discrete axis you can pass either the level name (`y = "Lettuce"`) or a number. The numbers are the level positions, so `y = 12.5` sits halfway between the twelfth and thirteenth bar.
 
-Then there's output size, which is worth settling before you position anything at all. Text size is absolute, so 10pt is 10pt, while the panel stretches to fill whatever device it is drawn on. An annotation that sits neatly in the Positron plot pane can end up across a bar in the 8×6 inch PNG you export. Using the {camcorder} package is a great way to render every plot at your final dimensions while you build it:
+Then there's output size, which you should decide before you position anything. Text size is absolute, so 10pt is 10pt, while the panel stretches to fill whatever output size it is drawn on. An annotation that sits neatly in the plot pane can end up across a bar in the 8×6 inch PNG you export. I use the {camcorder} package to render my plots at the dimensions I export them in:
 
 ```{r}
 #| eval: false
@@ -582,11 +582,13 @@ camcorder::gg_record(
 )
 ```
 
-For a first guess at coordinates, {ggannotate} launches a Shiny gadget where you click on the plot where you want the annotation and it hands back the code with the coordinates filled in. Install it with `remotes::install_github("MattCowgill/ggannotate")` and call `ggannotate(p)`.
+The {ggannotate} package is also a great way to get an estimate of the coordinates. It launches a Shiny app in which you click on the plot where you want the annotation, and it hands back the code with the coordinates filled in. Install it with `remotes::install_github("MattCowgill/ggannotate")` and call `ggannotate(p)`.
+
+Often you will find that you will need to nudge the coordinates slightly to get them in the correct position.
 
 ### Annotations outside the panel
 
-`coord_cartesian(clip = "off")` lets annotations be drawn outside the plot. ggplot2 clips anything beyond the panel edges by default, so turning clipping off is what allows the text to spill into the margin, and then the margin has to be big enough to hold it.
+Another function I wish I'd learnt about when I first started using ggplot2 is `coord_cartesian(clip = "off")`. It lets annotations be drawn outside the plot. ggplot2 clips anything beyond the panel edges by default, so turning clipping off is what allows the text into the margin, and then the margin has to be wide enough to hold it.
 
 ```{r}
 #| warning: false
@@ -598,21 +600,19 @@ p +
     x = max(edible_tidy$days_min) * 1.02,
     y = "Lettuce",
     label = "Days to harvest depend\non when the crop is sown",
-    size = 9 / .pt,
+    size = 3.53,
     hjust = 0,
     colour = "grey40"
   ) +
   coord_cartesian(clip = "off") +
-  theme(plot.margin = margin(5.5, 100, 5.5, 5.5))
+  theme(plot.margin = margin(5, 60, 5, 5))
 ```
 
-`margin()` takes its values in the order top, right, bottom, left, and the units are points, so 100 on the right leaves roughly 3.5 cm for the label to sit in.
+`margin()` takes its values in the order top, right, bottom, left, and the units are points, so 60 on the right leaves roughly 2 cm for the label to sit in.
 
-Treemaps are the exception. If a `geom_text()` coordinate falls outside the plot area the treemap expands to fit it, instead of the text spilling into the margin. For annotations around a treemap, use `geom_textbox()` with a separate data frame for each one.
+## Repelling overlapping labels with `geom_text_repel()`
 
-## Repelling overlapping labels with geom_text_repel()
-
-`geom_text_repel` is generally used when you have overlapping labels. As the name suggest it the labels repel each other so that they are placed in free space rather than overlapping. A better example of this is with a scatterplot.
+`geom_text_repel()` is generally used when you have overlapping labels. As the name suggests, the labels repel each other so that they are placed in free space rather than overlapping. A scatterplot is a better example of this.
 
 ```{r}
 #| warning: false
@@ -630,7 +630,7 @@ p <- ggplot(
   labs(
     y = NULL,
     subtitle = "Minimum number of days to harvest",
-    x = "Minum growth temperature (°C)"
+    x = "Minimum growing temperature (°C)"
   ) +
   geom_text_repel(
     size = 5,
@@ -645,21 +645,40 @@ p <- ggplot(
 p
 ```
 
-For some other great examples of where geom_text_repel can be used see [this post](https://r-graph-gallery.com/package/ggrepel.html) on the r-graph-gallery.
+For some other great examples of where `geom_text_repel()` can be used, see [this post](https://r-graph-gallery.com/package/ggrepel.html) on the r-graph-gallery.
 
 ## A note on font size
 
-Almost every geom here measures `size` in millimetres, while the rest of ggplot2 (axis text, titles, theme elements) uses points. That mismatch is why a label set to `size = 10` towers over 10pt axis labels.
+Almost every geom here measures `size` in millimetres, while the rest of ggplot2 (axis text, titles, theme elements) uses points.
 
-`geom_text()` and `geom_label()` gained a `size.unit` argument in ggplot2 3.5.0, so you can write `size = 10, size.unit = "pt"` and be done. It doesn't help with `annotate()`, ggrepel or ggtext. The version that works everywhere is `.pt`, a constant ggplot2 exports for exactly this conversion:
+`geom_text()` gained a `size.unit` argument in ggplot2 3.5.0, so you can write `size = 10, size.unit = "pt"` and be done. It doesn't help with `annotate()`, {ggrepel} or {ggtext}. The version that works everywhere is `.pt`, a constant ggplot2 exports for exactly this conversion:
 
 ```{r}
-#| eval: false
+#| warning: false
+#| message: false
 
-size <- 10 / .pt
+ggplot() +
+  annotate(
+    geom = "text",
+    x = 0,
+    y = 2,
+    label = "size = 10",
+    size = 10
+  ) +
+  annotate(
+    geom = "text",
+    x = 0,
+    y = 1,
+    label = "size = 10 / .pt",
+    size = 10 / .pt
+  ) +
+  scale_x_continuous(limits = c(-1, 1)) +
+  scale_y_continuous(limits = c(0, 3)) +
+  labs(x = NULL, y = NULL) +
+  theme_minimal(base_size = 10)
 ```
 
-Divide the point size you want by `.pt` and you get the millimetre value that produces it.
+The point size you want, divided by `.pt`, gives the millimetre value that produces it.
 
 ## Summary
 
@@ -668,7 +687,6 @@ Divide the point size you want by `.pt` and you get the millimetre value that pr
 | `geom_text()` | Label every row of the data | Uses `aes()`, inherits from `ggplot()` | No — break lines with `\n` | Plain text, or plotmath with `parse = TRUE` | Yes (`angle`) | No | mm, or `size.unit = "pt"` | ggplot2 |
 | `annotate()` | Single annotations not tied to a row of data | No `aes()`, values passed straight in | No | Plain text or plotmath | Yes (`angle`) | Only via `geom = "label"` | mm — use `10 / .pt` | ggplot2 |
 | `geom_text_repel()` | Many labels that would otherwise overlap | Uses `aes()`, inherits from `ggplot()` | No | Plain text or plotmath | Yes (`angle`) | No | mm | ggrepel |
-| `geom_label_repel()` | As `geom_text_repel()`, boxed for busy backgrounds | Uses `aes()`, inherits from `ggplot()` | No | Plain text or plotmath | Yes (`angle`) | Yes (`label.size`) | mm | ggrepel |
 | `geom_richtext()` | Short labels needing inline styling | Uses `aes()`, needs its own data frame | No | Markdown / HTML subset | Yes (`angle`) | Yes (`label.colour`, `label.size`) | mm | ggtext |
 | `geom_textbox()` | Sentences and paragraphs | Uses `aes()`, needs its own data frame | Yes (`width`) | Markdown / HTML subset | 90° steps only (`orientation`) | Yes (`box.colour`, `box.size`) | mm | ggtext |
 | `geom_dl()` | Labelling groups directly instead of using a legend | Uses `aes()` plus a `method` | No | Plain text | Via the method (e.g. `rot = 30`) | Via the method (e.g. `angled.boxes`) | `cex` multiplier | directlabels |
