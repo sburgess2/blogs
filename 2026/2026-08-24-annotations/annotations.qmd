@@ -1,13 +1,11 @@
 ---
-title: "Adding annotations"
+title: "Adding annotations to your plots"
 author: "Sara Burgess"
 format: html
 editor: visual
 ---
 
-## Adding annotations to your plots
-
-I think one of the trickiest thing about generating a plot in R is annotating. Annotations can really help your reader interpret the graph / take off some of the cognitive load, highlight a certain observation or group of observations. There are multiple ways to do this. Using the following functions:
+I think one of the trickiest thing about generating a plot in R is annotating. Annotations can really help your reader interpret your graph and highlight a certain observation or group of observations. As with many things in R there are multiple ways to do this. In this blog I'll run through six functions that can be used for annotating.
 
 ```{r}
 #| warning: false
@@ -167,7 +165,7 @@ edible_tidy <- read_csv(
 )
 ```
 
-Lets use the [Edible Plants](https://github.com/rfordatascience/tidytuesday/blob/main/data/2026/2026-02-03/readme.md)TidyTuesday dataset (from the [Data Science Learning Community](https://dslc.io/)) to illustrate how these different functions work.
+We will use the [Edible Plants](https://github.com/rfordatascience/tidytuesday/blob/main/data/2026/2026-02-03/readme.md) TidyTuesday dataset (from the [Data Science Learning Community](https://dslc.io/)) to illustrate how these different functions work.
 
 First load the libraries that we'll be using:
 
@@ -189,7 +187,7 @@ I've generated a tidy version of the Edible Plants dataset. You can load the tid
 #| eval: false
 
 edible_tidy <- read_csv(
- "https://raw.githubusercontent.com/sburgess2/blogs/main/2026/2026-08-24-annotations/data/edible_plants_tidy.csv"
+  "https://raw.githubusercontent.com/sburgess2/blogs/main/2026/2026-08-24-annotations/data/edible_plants_tidy.csv"
 )
 ```
 
@@ -209,8 +207,8 @@ p <- ggplot(
   geom_col(fill = "#55692f") +
   labs(
     y = NULL,
-    subtitle = "Minimum number of days to harvest",
-    x = "Common name"
+    subtitle = "Common name",
+    x = "Minimum number of days to harvest"
   ) +
   theme_minimal() +
   theme(
@@ -218,6 +216,8 @@ p <- ggplot(
     panel.grid = element_blank() #remove gridlines
   )
 ```
+
+## Annotating every row of your data using `geom_text()`
 
 For this first example of annotating a plot we'll use `geom_text()` to label each bar with the actual value of "Minimum days to harvest".
 
@@ -230,7 +230,7 @@ p_label <- p +
     aes(label = days_min),
     size = 3.53,
     hjust = 1,
-      nudge_x = -1,
+    nudge_x = -1,
     colour = "#ffffff"
   )
 p_label
@@ -254,7 +254,9 @@ p +
   )
 ```
 
-Perhaps you may have noticed that the annotation looks a bit fuzzy. This is because when you use `geom_text()` it's inheriting the data from the dataframe `edible_tidy`. There are 32 observations, so the text `Lettuce has a wide temperature growth range` gets placed onto the plot 32 times. We will come back to geom_text but for now lets look at another way to place to this annotation using `annotate()`
+Perhaps you may have noticed that the annotation looks a bit fuzzy. This is because when you use `geom_text()` it's inheriting the data from the dataframe `edible_tidy`. There are 32 observations, so the text `Lettuce has a wide temperature growth range` gets placed onto the plot 32 times. We will come back to geom_text but for now lets look at another way to place to this annotation using `annotate()`.
+
+## Single annotations using `annotate()`
 
 ```{r}
 #| warning: false
@@ -271,7 +273,7 @@ p +
   )
 ```
 
-Now our label is cleaning looking. Lets look at some of the arguments we've used. First we've specified the type of geom to use. In this case we want to add a text annotation, but `annotate()` can also be used for adding shapes and lines. `x` and `y` are used for specifying the position of the annotation, again the size of the text is specified in mm. 10pt is 3.53 mm. `hjust` is used to align the text to the left.
+Now our label is cleaning looking. Lets look at some of the arguments we've used. First we've specified the type of geom to use using `geom = "text"`. In this example we want to add a text annotation, but `annotate()` can also be used for adding shapes and lines (see the example below). `x` and `y` are used for specifying the position of the annotation, again `size` is used (where 3.53 mm us 10pt) and `hjust` is used to align the text to the left.
 
 Next lets look at how we can use annotate() to add a line or an arrow.
 
@@ -327,7 +329,7 @@ p +
   )
 ```
 
-The same trap that caught `geom_text()` catches `geom_segment()`. You could add a segment with `geom_segment(),` but the same issue occurs that you get with `geom_text()` where you get one segment per row of the data, all stacked in the same place. Either use `annotate(geom = "segment", ...)` as above, or pass `geom_segment()` its own one-row data frame.
+In the examples above `x` and `y` are used to specify the coordinates of the start of the line or arrow and `xend` and `yend` the end of the line or arrow. You could add a line with `geom_segment(),` but the same issue occurs that you get with `geom_text()` where you get one segment per row of the data, all stacked in the same place. Either use `annotate(geom = "segment", ...)` as above, or pass `geom_segment()` its own one-row data frame.
 
 Other aesthetics can also be included as arguments in the annotate function. For example, changing the colour or transparency of the text or arrow.
 
@@ -339,7 +341,7 @@ p +
   annotate(
     geom = "text",
     y = "Lettuce",
-    x = 60,
+    x = 50,
     label = "Lettuce has a wide temperature growth range",
     size = 3.53,
     hjust = 0,
@@ -368,8 +370,8 @@ You can also change the font or font face:
 p +
   annotate(
     geom = "text",
-    y = "Squash",
-    x = 90,
+    y = "Watermelon",
+    x = 80,
     label = "paste(italic('Phytophthora infestans'), ' can cause blight in potatoes and tomatoes')",
     parse = TRUE,
     size = 2.8224,
@@ -379,11 +381,11 @@ p +
   annotate(
     geom = "curve",
     x = 100,
-    y = "Squash",
+    y = 23 + 0.5,
     xend = 100,
     yend = "Potato",
-      curvature = 0.3,
-      #angle = 90,
+    curvature = 0.3,
+    #angle = 90,
     #ncp = 10,
     alpha = 0.5,
     arrow = arrow(
@@ -394,35 +396,34 @@ p +
   annotate(
     geom = "curve",
     x = 100,
-    y = "Squash",
+    y = 23 + 0.5,
     xend = 65,
     yend = "Tomato",
-      curvature = -0.3,
-      #angle = 90,
+    curvature = -0.3,
+    #angle = 90,
     alpha = 0.5,
     arrow = arrow(
       length = unit(0.2, "cm"),
       type = "closed"
-    ))
+    )
+  )
 ```
 
-`annotate()` covers most one-off labels, but there are a few things it won't do.
+Generally `annotate()` is fine for most annotations, but there are a few things it won't do:
 
-It won't wrap text. Whatever you pass to `label` is drawn on a single line, so a long sentence runs off the edge of the panel. You can break the line yourself with `\n`, but then every break has to be checked again whenever the plot changes size.
+Formatting is limited to plotmath. The *Phytophthora infestans* label above works, but it's quite a long expression. For one italic word that's fine, but for multiple font face changes the code becomes very wordy.
 
-Formatting is limited to plotmath. The *Phytophthora infestans* label above works, but look at what it cost: the whole thing becomes a `paste()` expression, every literal space has to sit inside quotes, and `parse = TRUE` has to be switched on. For one italic word that's fine, but for a sentence containing an italic species name and a coloured number, the source becomes unreadable.
+It won't wrap text. As you may have noticed in the above example the annotation is drawn on a single line, so because it's a long sentence it runs off the edge of the panel. You can break the line yourself with `\n`, but then every break has to be checked again whenever the plot changes size, `\n` also doesn't work with plotmath.
 
 You cannot place the text in a box with your own formatting.
 
-And `annotate()` positions in data units, which means the label is pinned to a coordinate you typed rather than to anything in the plot. If you change the data, or the scale the annotation stays put while everything around it moves. I'll come back to that below.
-
-## Markdown labels with geom_richtext() and geom_textbox()
+## Annotations with geom_richtext() and geom_textbox()
 
 When plotmath isn't enough, the {ggtext} package gives you two geoms that can use Markdown and HTML.
 
-Use `geom_richtext()` when the annotation is short but part of it needs different styling: an italic species name, a coloured word to match a colour in the plot, a superscript unit. Anything you'd write with asterisks or a `<span>` in a Quarto document works here.
+Use `geom_richtext()` when the annotation is short but part of it needs different styling: an italic species name, a coloured word to match a colour in the plot, a superscript unit.
 
-Neither geom has an `annotate()` shortcut the way `"text"` and `"segment"` do, so each annotation gets its own one-row data frame, plus `inherit.aes = FALSE` so it ignores the mapping set in `ggplot()`.
+When using `geom_richtext()` or `geom_textbox()` each annotation gets its data frame, plus use `inherit.aes = FALSE` so it ignores the mapping set in `ggplot()`.
 
 ```{r}
 #| warning: false
@@ -439,14 +440,89 @@ p +
     data = blight,
     aes(x = x, y = y, label = label),
     inherit.aes = FALSE,
-    size = 10 / .pt,
+    size = 3.53,
     hjust = 0,
     fill = NA,
-    label.colour = NA
+    label.colour = NA,
+    colour = "white"
   )
 ```
 
 `fill = NA` and `label.colour = NA` strip off the background and border that `geom_richtext()` draws by default. Leave them out and you get a boxed label.
+
+```{r}
+#| warning: false
+#| message: false
+
+edible_highlight <- edible_tidy |>
+  mutate(highlight = common_name %in% c("Potato", "Tomato"))
+
+p_highlight <- ggplot(
+  data = edible_highlight,
+  aes(
+    y = fct_reorder(common_name, days_min),
+    x = days_min,
+    fill = highlight
+  )
+) +
+  geom_col() +
+  scale_fill_manual(values = c("TRUE" = "#55692f", "FALSE" = "grey85")) +
+  guides(fill = "none") +
+  labs(
+    y = NULL,
+    subtitle = "Minimum number of days to harvest",
+    x = "Common name"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title.position = "plot",
+    panel.grid = element_blank()
+  )
+
+blight_box <- tibble(
+  x = 80,
+  y = "Watermelon",
+  label = "*Phytophthora infestans* can cause<br>blight in potatoes and tomatoes"
+)
+
+p +
+  geom_richtext(
+    data = blight_box,
+    aes(x = x, y = y, label = label),
+    inherit.aes = FALSE,
+    size = 2.8224,
+    hjust = 0,
+    colour = "grey20",
+    fill = NA,
+    label.colour = "#55692f"
+  ) +
+  annotate(
+    geom = "curve",
+    x = 100,
+    y = 23 + 0.5,
+    xend = 100,
+    yend = "Potato",
+    curvature = 0.3,
+    alpha = 0.5,
+    arrow = arrow(
+      length = unit(0.2, "cm"),
+      type = "closed"
+    )
+  ) +
+  annotate(
+    geom = "curve",
+    x = 100,
+    y = 23 - 0.5,
+    xend = 65,
+    yend = "Tomato",
+    curvature = -0.3,
+    alpha = 0.5,
+    arrow = arrow(
+      length = unit(0.2, "cm"),
+      type = "closed"
+    )
+  )
+```
 
 `geom_textbox()` is the one to use when the annotation contains multiple sentences. You can specify a `width` and it wraps the text to fit.
 
