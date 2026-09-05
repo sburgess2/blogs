@@ -1,0 +1,31 @@
+taxonomic_name,common_name,cultivation,temperature_class,temperature_growing,temp_min,temp_max,days_harvest,days_min,days_max
+Brassica oleracea,Broccoli,Brassica,Half hardy,7-30,7,30,55-85,55,85
+Brassica oleracea,Cauliflower,Brassica,Hardy,15-20,15,20,55-110,55,110
+Brassica oleracea,Kale,Brassica,Very hardy,15-20,15,20,65-75,65,75
+Brassica rapa,Turnip,Brassica,Very hardy,5-24,5,24,45-70,45,70
+Cucurbita pepo,Zucchini,Cucurbit,Tender,21-35,21,35,50-60,50,60
+Cucumis sativus,Cucumber,Cucurbit,Tender,16-35,16,35,90-120,90,120
+Cucumis melo,Rockmelon,Cucurbit,Tender,18-,18,NA,75-100,75,100
+Cucurbita moschata,Pumpkin,Cucurbit,Hardy,21-35,21,35,90-120,90,120
+Citrullus lanatus,Watermelon,Cucurbit,Tender,26,26,NA,80-100,80,100
+Lactuca sativa,Lettuce,Salad,Tender,4-27,4,27,45-100,45,100
+Apium graveolens,Celery,Salad,Tender,13-,13,NA,90-140,90,140
+Cichorium intybus,Chicory,Salad,Hardy,10-25,10,25,75-80,75,80
+Cynara cardunculus,Artichokes globe,Brassica,Tender,10-24,10,24,100-150,100,150
+Solanum melongena,Aubergine,Solanaceae,Tender,24-32,24,32,65-80,65,80
+Beta vulgaris,Beetroot,Umbelliferae,Half hardy,10-30,10,30,55-80,55,80
+Brassica rapa,Bok Choy,Brassica,Tender,10-24,10,24,45-60,45,60
+Brassica oleracea,Cabbage tight-headed,Brassica,Hardy,7-30,7,30,60-110,60,110
+Brassica rapa,Chinese cabbage,Brassica,Tender,10-24,10,24,45-60,45,60
+Brassica oleracea,Calabrese,Brassica,Tender,7-30,7,30,55-85,55,85
+Daucus carota,Carrot,Umbelliferae,Hardy,7-30,7,30,60-80,60,80
+Apium graveolens,Celeriac,Umbelliferae,Hardy,15-18,15,18,90-120,90,120
+Capsicum annuum,Chilli peppers,Solanaceae,Tender,17-,17,NA,60-90,60,90
+Foeniculum vulgare,Fennel,Umbelliferae,Hardy,15-30,15,30,80-,80,NA
+Allium cepa,Onion,Allium,Hardy,10-35,10,35,90-130,90,130
+Pastinaca sativa,Parsnip,Umbelliferae,Half hardy,10-21,10,21,80-120,80,120
+Capsicum annuum,Bell peppers,Solanaceae,Tender,17-35,17,35,60-80,60,80
+Solanum tuberosum,Potato,Solanaceae,Tender,7-26,7,26,100-115,100,115
+Cucurbita pepo,Summer squash,Cucurbit,Tender,10-32,10,32,45-75,45,75
+Cucurbita maxima,Squash,Cucurbit,Tender,10-32,10,32,85-120,85,120
+Solanum lycopersicum,Tomato,Solanum,Tender,16-30,16,30,65-85,65,85
