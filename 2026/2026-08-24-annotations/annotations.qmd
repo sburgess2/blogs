@@ -228,7 +228,7 @@ For this first example of annotating a plot we'll use `geom_text()` to label eac
 p_label <- p +
   geom_text(
     aes(label = days_min),
-    size = 3.53,
+    size = 10 / .pt,
     hjust = 1,
     nudge_x = -1,
     colour = "#ffffff"
@@ -249,7 +249,7 @@ p +
     y = "Lettuce",
     x = 45,
     label = "Lettuce has a wide temperature growth range",
-    size = 3.53,
+    size = 10 / .pt,
     hjust = 0
   )
 ```
@@ -268,12 +268,12 @@ p +
     y = "Lettuce",
     x = 45,
     label = "Lettuce has a wide temperature growth range",
-    size = 3.53,
+    size = 10 / .pt,
     hjust = 0
   )
 ```
 
-Now our label looks cleaner. Let's look at some of the arguments we've used. First we've specified the type of geom with `geom = "text"`. In this example we want to add a text annotation, but `annotate()` can also be used for adding shapes and lines (see the example below). `x` and `y` are used for specifying the position of the annotation, again `size` is used (where 3.53 mm is 10pt) and `hjust` is used to align the text to the left.
+Now our label looks cleaner. Let's look at some of the arguments we've used. First we've specified the type of geom with `geom = "text"`. In this example we want to add a text annotation, but `annotate()` can also be used for adding shapes and lines (see the example below). `x` and `y` are used for specifying the position of the annotation, again `size` is used (`.pt` is a constant ggplot2 exports, so `10 / .pt` gives you 10pt text) and `hjust` is used to align the text to the left.
 
 Next we'll look at how `annotate()` can be used to add a line or an arrow.
 
@@ -289,7 +289,7 @@ p +
     y = "Lettuce",
     x = 50,
     label = "Lettuce has a wide temperature growth range",
-    size = 3.53,
+    size = 10 / .pt,
     hjust = 0
   ) +
   annotate(
@@ -313,7 +313,7 @@ p +
     y = "Lettuce",
     x = 50,
     label = "Lettuce has a wide temperature growth range",
-    size = 3.53,
+    size = 10 / .pt,
     hjust = 0
   ) +
   annotate(
@@ -343,7 +343,7 @@ p +
     y = "Lettuce",
     x = 50,
     label = "Lettuce has a wide temperature growth range",
-    size = 3.53,
+    size = 10 / .pt,
     hjust = 0,
     colour = "blue"
   ) +
@@ -374,7 +374,7 @@ p +
     x = 80,
     label = "paste(italic('Phytophthora infestans'), ' can cause blight in potatoes and tomatoes')",
     parse = TRUE,
-    size = 3.53,
+    size = 10 / .pt,
     hjust = 0,
     colour = "blue"
   ) +
@@ -440,7 +440,7 @@ p +
     data = blight,
     aes(x = x, y = y, label = label),
     inherit.aes = FALSE,
-    size = 3.53,
+    size = 10 / .pt,
     hjust = 0,
     fill = NA,
     label.colour = NA,
@@ -465,7 +465,7 @@ p +
     data = blight_textbox,
     aes(x = x, y = y, label = label),
     inherit.aes = FALSE,
-    size = 3.53,
+    size = 10 / .pt,
     hjust = 0,
     fill = "#99A582",
     label.colour = "#55692f",
@@ -516,7 +516,7 @@ p +
     data = blight_wrapped,
     aes(x = x, y = y, label = label),
     inherit.aes = FALSE,
-    size = 3.53,
+    size = 10 / .pt,
     width = unit(5, "cm"),
     hjust = 0,
     box.colour = "grey80",
@@ -600,7 +600,7 @@ p +
     x = max(edible_tidy$days_min) * 1.02,
     y = "Lettuce",
     label = "Days to harvest depend\non when the crop is sown",
-    size = 3.53,
+    size = 10 / .pt,
     hjust = 0,
     colour = "grey40"
   ) +
