@@ -45,6 +45,7 @@ library(RColorBrewer)
 
 ```{r}
 fl <- "2026/2026-10-10-plasmidmap/data/pEE072d2_CTX-M.gb"
+fl <- "2026/2026-10-10-plasmidmap/data/contig_3_v2.gb"
 fl_name <- fl |>
   str_remove(pattern = ".gb") |>
   str_remove("data/2026/2026-10-10-plasmidmap/data/")
@@ -56,7 +57,7 @@ plasmapR can convert the plasmid object straight into a data frame with `as.data
 ```{r}
 df <- plasmid |>
   as.data.frame()
-
+write_csv(df, "2026/2026-10-10-plasmidmap/output/df.csv")
 #First six lines
 head(df)
 
@@ -64,7 +65,7 @@ head(df)
 tail(df)
 ```
 
-However, some of the features I wanted (such as the locus tag, gene name, and product) were nested, so this simple approach didn't work. 
+Sometimes your plasmid object will be have the the features nested, so if the approach above  I wanted (such as the locus tag, gene name, and product) were nested, so this approach didn't work. 
 
 You can see that they are nested using the `str` function (within a list?) to see the structure of plasmid. Within the plasmid object there are three lists (length, features and sequence). Within the features list are the things I'm interested in / that I need for generating and annotating the plasmid map such as the start and stop positions, gene name and product.
 
@@ -72,7 +73,7 @@ You can see that they are nested using the `str` function (within a list?) to se
 str(plasmid)
 ```
 
-Instead of using , I looped over each feature with `map_dfr()` and pulled out the fields I needed into a single data frame. Not every feature has a locus tag, gene name, or product, so `%||%` returns `NA` when a field is `NULL`. Without it, `data.frame()` would fail for those features.
+Next, I looped over each feature with `map_dfr()` and pulled out the fields I needed into a single data frame. Not every feature has a locus tag, gene name, or product, so `%||%` returns `NA` when a field is `NULL`. Otherwise you'll get an error for those features, because there'll be differening number of rows.
 
 ```{r}
 df <- plasmid$features |>
@@ -91,16 +92,34 @@ df <- plasmid$features |>
   )
 ```
 
+Here is the first six rows of this dataframe:
+
+```{r}
+head(df)
+```
+
 ### Grouping the genes by predicted function
 
-Next, I kept only the coding sequences (CDS) and added a column grouping each gene by its predicted function. `case_when()` works through the conditions in order and stops at the first match, so the order matters here. For example, anything with "transposase" or "integrase" in the product is labelled as plasmid mobilisation before the gene name checks for transfer (*tra*) or replication (*rep*) genes are reached. AMR genes are picked up by gene name (e.g. *aph*, *aadA*, *sul1*, *tet*), and ESBL/AmpC genes (*CTX-M* and *blaCMY*) are kept as their own group so they stand out from the other AMR genes. Anything not matched ends up as "Other".
+This dataframe contains three rows that aren't coding sequences. The source:
+
+```{r}
+df |> filter(type == "source")
+```
+
+And the miscellenous sequences:
+
+```{r}
+df |> filter(type == "misc_feature")
+```
+
+
+I filtered out these rows by only keeping the the coding sequences (CDS). I've chained together a few functions in this next code chunk. I used `mutate()` to add another column called `contig_name`, which I've extracted from the `locus_tag`. I've used some regex for this. column grouping each gene by its predicted function. `case_when()` works through the conditions in order and stops at the first match, so the order matters here. For example, anything with "transposase" or "integrase" in the product is labelled as plasmid mobilisation before the gene name checks for transfer (*tra*) or replication (*rep*) genes are reached. AMR genes are picked up by gene name (e.g. *aph*, *aadA*, *sul1*, *tet*), and ESBL/AmpC genes (*CTX-M* and *blaCMY*) are kept as their own group so they stand out from the other AMR genes. Anything not matched ends up as "Other".
 
 `plot_plasmid()` won't work with `NA` values in the gene name, so where the gene name was missing I used the product description instead. Finally, I selected and renamed the columns to the names `plot_plasmid()` expects, with the new function groups becoming the `type` column.
 
 ```{r}
 df1 <- df |>
   filter(type == "CDS") |>
-  mutate(contig_name = str_extract(locus_tag, "WWA_24_\\w+_contig_\\d+")) |>
   mutate(
     annotation = case_when(
       str_detect(
