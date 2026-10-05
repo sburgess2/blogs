@@ -65,32 +65,9 @@ head(df)
 tail(df)
 ```
 
-Sometimes your plasmid object will be have the the features nested, so if the approach above  I wanted (such as the locus tag, gene name, and product) were nested, so this approach didn't work. 
+Sometimes your plasmid object will be have the the features nested, so if the approach above doesn't work you may need to loop over feature using `map_dfr()` to pull out the fields you need into a single data frame.  
 
-You can see that they are nested using the `str` function (within a list?) to see the structure of plasmid. Within the plasmid object there are three lists (length, features and sequence). Within the features list are the things I'm interested in / that I need for generating and annotating the plasmid map such as the start and stop positions, gene name and product.
 
-```{r}
-str(plasmid)
-```
-
-Next, I looped over each feature with `map_dfr()` and pulled out the fields I needed into a single data frame. Not every feature has a locus tag, gene name, or product, so `%||%` returns `NA` when a field is `NULL`. Otherwise you'll get an error for those features, because there'll be differening number of rows.
-
-```{r}
-df <- plasmid$features |>
-  map_dfr(
-    ~ data.frame(
-      index = .x$index,
-      type = .x$type,
-      start = .x$start_end[1],
-      end = .x$start_end[2],
-      direction = .x$direction,
-      locus_tag = .x$locus_tag %||% NA,
-      gene_name = .x$gene %||% NA,
-      name = .x$name %||% NA,
-      product = .x$product %||% NA
-    )
-  )
-```
 
 Here is the first six rows of this dataframe:
 
