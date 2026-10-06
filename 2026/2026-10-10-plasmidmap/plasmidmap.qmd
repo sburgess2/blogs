@@ -9,15 +9,9 @@ execute:
   message: false
 ---
 
-In this blog I'll run through how I drew plasmid maps in R using the plasmapR package (written by Brady Johnston). A plasmid map shows the genes on a circular plasmid as arrows around a ring, so you can see at a glance where the antimicrobial resistance (AMR) genes sit and what is around them. plasmapR does most of the work, but I wanted to change the colours, the labels, and which genes were shown, so a fair bit of this post is about modifying the ggplot object that plasmapR returns. I'll start by drawing a map for a single plasmid, then wrap the steps in a function so I can draw several plasmids and combine them into one figure.
-
-\[Missing: a sentence or two on where the plasmids came from (e.g. the WWA_24 isolates) and why you wanted to map them\]
+In this blog I'll run through how I drew plasmid maps in R using the plasmapR package (written by Brady Johnston). A plasmid map shows the genes on a circular plasmid as arrows around a ring, so you can see at a glance where the antimicrobial resistance (AMR) genes sit and what is around them. plasmapR does most of the work, but I wanted to change the colours, the labels, and which genes were shown, so a fair bit of this post is about modifying the ggplot object that plasmapR returns. I'll start by drawing a map for a single plasmid.
 
 The plasmid sequence originates from an *Escherichia coli* strain isolated from dairy cattle faeces The plasmid was assembled using Flye and annotated using Prokka as described in [Burgess et al (2021)](https://doi.org/10.1016/j.idairyj.2021.104998).
-
-## Preparing the GenBank files
-
-One issue I ran into was that the transposase names were being changed to the contig number when the file was read in. To get around this, I manually renamed them to "transposase ISXX" in Geneious. For example, "IS4 family transposase ISVsa5 CDS" was changed to "transposase ISVSa5". Finally, the GenBank file was exported and used as the input into plasmapR.
 
 ## Packages
 
@@ -41,14 +35,14 @@ library(RColorBrewer)
 
 ### Reading in the data
 
-`read_gb()` reads the GenBank file into a plasmid object. I also saved the contig name (the file name without the folder or the `.gbff` extension).
+`read_gb()` reads the GenBank file into a plasmid object. I also saved the contig name (the file name without the folder or the `.gb` extension).
 
 ```{r}
 fl <- "2026/2026-10-10-plasmidmap/data/pEE072d2_CTX-M.gb"
 fl <- "2026/2026-10-10-plasmidmap/data/contig_3_v2.gb"
 fl_name <- fl |>
-  str_remove(pattern = ".gb") |>
-  str_remove("data/2026/2026-10-10-plasmidmap/data/")
+  str_remove(pattern = "\\.gb$") |>
+  str_remove("2026/2026-10-10-plasmidmap/data/")
 plasmid <- fl |> read_gb()
 ```
 
@@ -57,17 +51,7 @@ plasmapR can convert the plasmid object straight into a data frame with `as.data
 ```{r}
 df <- plasmid |>
   as.data.frame()
-write_csv(df, "2026/2026-10-10-plasmidmap/output/df.csv")
-#First six lines
-head(df)
-
-#Last six lines
-tail(df)
 ```
-
-Sometimes your plasmid object will be have the the features nested, so if the approach above doesn't work you may need to loop over feature using `map_dfr()` to pull out the fields you need into a single data frame.  
-
-
 
 Here is the first six rows of this dataframe:
 
@@ -90,44 +74,28 @@ df |> filter(type == "misc_feature")
 ```
 
 
-I filtered out these rows by only keeping the the coding sequences (CDS). I've chained together a few functions in this next code chunk. I used `mutate()` to add another column called `contig_name`, which I've extracted from the `locus_tag`. I've used some regex for this. column grouping each gene by its predicted function. `case_when()` works through the conditions in order and stops at the first match, so the order matters here. For example, anything with "transposase" or "integrase" in the product is labelled as plasmid mobilisation before the gene name checks for transfer (*tra*) or replication (*rep*) genes are reached. AMR genes are picked up by gene name (e.g. *aph*, *aadA*, *sul1*, *tet*), and ESBL/AmpC genes (*CTX-M* and *blaCMY*) are kept as their own group so they stand out from the other AMR genes. Anything not matched ends up as "Other".
+I kept the coding sequences (CDS) and the miscellaneous features, which drops the source row but keeps the origin of replication (Ori) and the IS903 insertion sequence. I then used `mutate()` and `case_when()` to add a column grouping each gene by its predicted function, based on the gene name. `case_when()` works through the conditions in order and stops at the first match, so the order matters here. For example, *eitA* is named "eitA (Yi 2010) hypothetical protein CDS", so the iron uptake check (*eitA*-*eitD*) has to come before the hypothetical protein check. The transfer genes are picked up by the start of their names (*tra*, *trb* and *finO*), and the CTX-M gene is kept as its own ESBL/AmpC group. Genes with only a locus tag (e.g. EE0072d_05113) are grouped with the hypothetical proteins. Anything not matched ends up as "Other".
 
-`plot_plasmid()` won't work with `NA` values in the gene name, so where the gene name was missing I used the product description instead. Finally, I selected and renamed the columns to the names `plot_plasmid()` expects, with the new function groups becoming the `type` column.
+The CTX-M gene is named *bla_1* in the annotation, so I renamed it to *blaCTX-M* for the map label. Finally, I selected the columns `plot_plasmid()` expects, with the new function groups becoming the `type` column.
 
 ```{r}
 df1 <- df |>
-  filter(type == "CDS") |>
+  filter(type %in% c("CDS", "misc_feature")) |>
   mutate(
     annotation = case_when(
-      str_detect(
-        product,
-        "transposase|Transposase|group II intron|Integrase|IS21|ISSfl4|InsB|recombinase|Resolvase|integron integrase"
-      ) ~ "Plasmid mobilisation",
-      str_detect(gene_name, "tra") ~ "Plasmid transfer",
-      str_detect(gene_name, "rep") ~ "Plasmid replication",
-      str_detect(product, "partition") ~ "Plasmid partitioning",
-      str_detect(
-        gene_name,
-        "aph|aadA|blaTEM|dfrA|sul2|sul1|mph|tet|qnr|mph"
-      ) ~ "Antimicrobial resistance",
-      str_detect(product, "macrolide efflux|MacB") ~ "Antimicrobial resistance",
-      str_detect(product, "QacE") ~ "Disinfectant resistance",
-      str_detect(product, "ChrA") ~ "Metal resistance",
-      str_detect(gene_name, "CTX-M|blaCMY") ~ "ESBL/AmpC",
-      str_detect(
-        product,
-        "toxin|antitoxin|Antitoxin phd|PemK|Small toxic polypeptide"
-      ) ~ "Toxin-antitoxin",
-      str_detect(
-        product,
-        "hypothetical|Uncharacterized|DUF"
-      ) ~ "Hypothetical protein",
+      str_detect(name, "IS903") ~ "Plasmid mobilisation",
+      str_detect(name, "^bla") ~ "ESBL/AmpC",
+      str_detect(name, "^Ori$|^rep") ~ "Plasmid replication",
+      str_detect(name, "^par") ~ "Plasmid partitioning",
+      str_detect(name, "^relE|^pndA") ~ "Toxin-antitoxin",
+      str_detect(name, "^tra|^trb|^finO") ~ "Plasmid transfer",
+      str_detect(name, "^eit") ~ "Iron uptake",
+      str_detect(name, "^EE0072d_|hypothetical") ~ "Hypothetical protein",
       TRUE ~ "Other"
-    )
+    ),
+    name = if_else(str_detect(name, "^bla"), "blaCTX-M", name)
   ) |>
-  mutate(gene_name = if_else(is.na(gene_name), product, gene_name)) |>
-  select(index, gene_name, annotation, start, end, direction) |>
-  rename(type = annotation, name = gene_name)
+  select(index, name, type = annotation, start, end, direction)
 ```
 
 I didn't want the hypothetical proteins or the "Other" genes on the map, so I filtered them out. I also added a `mid` column (the midpoint of each gene), which I'll use later to position the gene labels.
@@ -140,12 +108,10 @@ filtered_df <- df1 |>
         "Plasmid replication",
         "Plasmid transfer",
         "Plasmid partitioning",
-        "Antimicrobial resistance",
         "Plasmid mobilisation",
-        "Disinfectant resistance",
-        "Metal resistance",
         "ESBL/AmpC",
-        "Toxin-antitoxin"
+        "Toxin-antitoxin",
+        "Iron uptake"
       )
   ) |>
   mutate(mid = (start + end) / 2)
@@ -153,19 +119,17 @@ filtered_df <- df1 |>
 
 ### Choosing the colours
 
-The colours are mostly from RColorBrewer's "Paired" palette. I gave related groups the same colour (replication and partitioning share a light blue, and disinfectant and metal resistance share a yellow), used orange for the AMR and ESBL/AmpC genes so they stand out, and a grey for the mobilisation genes so they sit in the background.
+The colours are mostly from RColorBrewer's "Paired" palette. I gave related groups the same colour (replication and partitioning share a light blue), used orange for the ESBL/AmpC gene so it stands out, green for the iron uptake genes, and a grey for the mobilisation genes so they sit in the background.
 
 ```{r}
 custom_colors <- c(
   "Plasmid replication" = "#A6CEE3",
   "Plasmid transfer" = "#1F78B4",
-  "Antimicrobial resistance" = "#FDBF6F",
   "Plasmid mobilisation" = "#B3B7B8FF",
   "Plasmid partitioning" = "#A6CEE3",
-  "Disinfectant resistance" = "#FFFF99",
-  "Metal resistance" = "#FFFF99",
   "ESBL/AmpC" = "#FF7F00",
-  "Toxin-antitoxin" = "#6A3D9A"
+  "Toxin-antitoxin" = "#6A3D9A",
+  "Iron uptake" = "#33A02C"
 )
 ```
 
@@ -192,7 +156,8 @@ no_text <- c(
   "Plasmid transfer",
   "Plasmid partitioning",
   "Toxin-antitoxin",
-  "Plasmid replication"
+  "Plasmid replication",
+  "Iron uptake"
 )
 pl1_modified <- pl1
 pl1_modified$layers <- append(
@@ -223,163 +188,7 @@ custom_plot <- pl1_modified +
 custom_plot
 ```
 
-## Mapping multiple plasmids
-
-Once I was happy with the map for one plasmid, I wrapped the same steps into a function so I could draw a map for every plasmid in the folder. Most of the function is the code above, so I'll only explain what changes:
-
-- The contig name is taken from the file name and passed to `plot_plasmid(name = contig_name)`, so each map is labelled with its contig.
-- The function counts the number of AMR genes on each plasmid (`amr_count`).
-- I made the backbone stroke and the gene arrow outlines thinner, and the gene arrows thicker, by changing the parameters of layer 1 (the backbone) and layer 3 (the gene arrows) directly. These changes are made before layers 2, 4, and 5 are removed, so the layer numbers still match plasmapR's defaults.
-- Instead of just the plot, the function returns a list with the plot, the AMR gene count, and the contig name.
-
-```{r}
-plot_plasmidmap <- function(file) {
-  contig_name <- file |>
-    str_remove(pattern = "\\.gbff$") |>
-    str_remove("data/plasmids/")
-
-  plasmid <- read_gb(file)
-  plasmid_df <- plasmid$features |>
-    map_dfr(
-      ~ data.frame(
-        index = .x$index,
-        type = .x$type,
-        start = .x$start_end[1],
-        end = .x$start_end[2],
-        direction = .x$direction,
-        locus_tag = .x$locus_tag %||% NA,
-        gene_name = .x$gene %||% NA,
-        name = .x$name %||% NA,
-        product = .x$product %||% NA
-      )
-    )
-  plasmid_df <- plasmid_df |>
-    filter(type == "CDS") |>
-    mutate(contig_name = str_extract(locus_tag, "WWA_24_\\w+_contig_\\d+")) |>
-    mutate(
-      annotation = case_when(
-        str_detect(
-          product,
-          "transposase|Transposase|group II intron|Integrase|IS21|ISSfl4|InsB|recombinase|Resolvase|integron integrase"
-        ) ~ "Plasmid mobilisation",
-        str_detect(gene_name, "tra") ~ "Plasmid transfer",
-        str_detect(gene_name, "rep") ~ "Plasmid replication",
-        str_detect(product, "partition") ~ "Plasmid partitioning",
-        str_detect(
-          gene_name,
-          "aph|aadA|blaTEM|dfrA|sul2|sul1|mph|tet|qnr"
-        ) ~ "Antimicrobial resistance",
-        str_detect(
-          product,
-          "macrolide efflux|MacB"
-        ) ~ "Antimicrobial resistance",
-        str_detect(product, "QacE") ~ "Disinfectant resistance",
-        str_detect(product, "ChrA") ~ "Metal resistance",
-        str_detect(gene_name, "CTX-M|blaCMY") ~ "ESBL/AmpC",
-        str_detect(
-          product,
-          "toxin|antitoxin|Antitoxin phd|PemK|Small toxic polypeptide"
-        ) ~ "Toxin-antitoxin",
-        str_detect(
-          product,
-          "hypothetical|Uncharacterized|DUF"
-        ) ~ "Hypothetical protein",
-        TRUE ~ "Other"
-      )
-    ) |>
-    mutate(gene_name = if_else(is.na(gene_name), product, gene_name)) |>
-    select(index, gene_name, annotation, start, end, direction) |>
-    rename(type = annotation, name = gene_name)
-
-  amr_count <- sum(plasmid_df$type == "Antimicrobial resistance")
-
-  filtered_df <- plasmid_df |>
-    filter(
-      type %in%
-        c(
-          "Plasmid replication",
-          "Plasmid transfer",
-          "Plasmid partitioning",
-          "Antimicrobial resistance",
-          "Plasmid mobilisation",
-          "Disinfectant resistance",
-          "Metal resistance",
-          "ESBL/AmpC",
-          "Toxin-antitoxin"
-        )
-    ) |>
-    mutate(mid = (start + end) / 2)
-
-  pl1 <- filtered_df |> plot_plasmid(name = contig_name)
-
-  pl1$layers[[1]]$aes_params$linewidth <- 0.1
-  pl1$layers[[3]]$geom_params$arrow_body_height <- grid::unit(5, "mm")
-  pl1$layers[[3]]$geom_params$arrowhead_height <- grid::unit(5, "mm")
-  pl1$layers[[3]]$aes_params$linewidth <- 0.2
-
-  pl1$layers <- pl1$layers[-c(2, 4, 5)]
-
-  no_text <- c(
-    "Plasmid mobilisation",
-    "Plasmid transfer",
-    "Plasmid partitioning",
-    "Toxin-antitoxin",
-    "Plasmid replication"
-  )
-  pl1_modified <- pl1
-  pl1_modified$layers <- append(
-    pl1_modified$layers,
-    geom_text(
-      data = filtered_df |>
-        filter(!type %in% no_text),
-      aes(x = mid, y = 3, label = name),
-      inherit.aes = FALSE,
-      size = 3,
-      color = "black",
-      nudge_y = 0.5,
-      show.legend = FALSE
-    ),
-    after = 0
-  )
-
-  custom_plot <- pl1_modified +
-    scale_fill_manual(values = custom_colors) +
-    theme_void() +
-    labs(fill = "Predicted function")
-
-  list(plot = custom_plot, amr_count = amr_count, contig = contig_name)
-}
-```
-
-Next, I listed all the `.gbff` files in the plasmids folder and ran the function over each one with `map()`. Because the function returns a list, `map(results, "plot")` pulls out just the plots, and `map_int(results, "amr_count")` pulls out the AMR gene counts, which I then summed to get the total number of AMR genes across all the plasmids.
-
-```{r}
-gb_files <- list.files(
-  "data/plasmids/",
-  pattern = "\\.gbff$",
-  full.names = TRUE
-)
-
-results <- map(gb_files, plot_plasmidmap)
-plots <- map(results, "plot")
-
-amr_counts <- map_int(results, "amr_count")
-total_amr <- sum(amr_counts)
-```
-
-### Combining the maps
-
-patchwork's `wrap_plots()` takes a list of plots, so combining the maps into one figure only needs one line. I arranged them in two columns, and `plot_layout(guides = "collect")` collects the legends into a single shared legend rather than one for each map.
-
-```{r}
-#| fig-width: 10
-#| fig-height: 12
-
-combined_plot <- wrap_plots(plots, ncol = 2) +
-  plot_layout(guides = "collect")
-
-combined_plot
-```
+<-- Add something here generally about using a function and patchwork for multiple maps -->
 
 ## Saving the figure
 
