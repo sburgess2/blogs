@@ -23,7 +23,7 @@ plasmapR isn't on CRAN, so it needs to be installed from GitHub.
 devtools::install_github("bradyajohnston/plasmapr")
 ```
 
-Along with plasmapR and the tidyverse, I used patchwork (Thomas Lin Pedersen) to combine the maps, and paletteer and RColorBrewer to choose the colours.
+Along with plasmapR and the tidyverse, I used paletteer and RColorBrewer to choose the colours.
 
 ```{r}
 library(tidyverse)
@@ -35,14 +35,10 @@ library(RColorBrewer)
 
 ### Reading in the data
 
-`read_gb()` reads the GenBank file into a plasmid object. I also saved the contig name (the file name without the folder or the `.gb` extension).
-
+`read_gb()` reads the GenBank file into a plasmid object. 
 ```{r}
-fl <- "2026/2026-10-10-plasmidmap/data/pEE072d2_CTX-M.gb"
+#fl <- "2026/2026-10-10-plasmidmap/data/pEE072d2_CTX-M.gb"
 fl <- "2026/2026-10-10-plasmidmap/data/contig_3_v2.gb"
-fl_name <- fl |>
-  str_remove(pattern = "\\.gb$") |>
-  str_remove("2026/2026-10-10-plasmidmap/data/")
 plasmid <- fl |> read_gb()
 ```
 
