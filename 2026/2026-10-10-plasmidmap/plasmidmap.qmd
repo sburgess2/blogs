@@ -283,7 +283,7 @@ Finally, we'll add the custom colours, remove the background and axes with `them
 
 custom_plot <- pl1_modified +
   scale_fill_manual(values = custom_colors) +
-  ylim(2, NA) +
+  ylim(2, NA) + #Do I need this?
   theme_void() +
   theme(legend.position = "top") +
   labs(fill = "Gene category")
@@ -344,17 +344,14 @@ make_plasmid_map <- function(fl) {
 }
 ```
 
-You can then use `map()` from purrr to run the function over a vector of file paths, which returns a list of maps.
+Rather than typing out each file path, `list.files()` finds every GenBank file in a folder. `pattern = "\\.gbff$"` keeps only files ending in .gbff, and `full.names = TRUE` returns the full path rather than just the file name. You can then use `map()` from purrr to run the function over the file paths, which returns a list of maps.
 
 ```{r}
 #| eval: false
 
-files <- c(
-  "2026/2026-10-10-plasmidmap/data/plasmid_a.gb",
-  "2026/2026-10-10-plasmidmap/data/plasmid_b.gb"
-)
+gb_files <- list.files("data/plasmids/", pattern = "\\.gbff$", full.names = TRUE)
 
-maps <- files |> map(make_plasmid_map)
+maps <- gb_files |> map(make_plasmid_map)
 ```
 
 To put the maps side by side, the patchwork package combines ggplot objects into a single figure. `wrap_plots()` takes a list of plots, and `plot_layout(guides = "collect")` keeps a single shared legend rather than one per map.
