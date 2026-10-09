@@ -9,7 +9,7 @@ execute:
   message: false
 ---
 
-In this blog I'll run through how I drew plasmid maps in R using the plasmapR package (written by Brady Johnston). I wanted to change the colours, the labels, and which genes were shown, so I modified the ggplot object that plasmapR returns. I'll be drawing a map for a single plasmid. You can download the plasmid sequence [here](https://github.com/sburgess2/blogs/tree/main/2026/2026-10-10-plasmidmap/data).
+In this blog I'll run through how I drew plasmid maps in R using the plasmapR package https://bradyajohnston.github.io/plasmapR/ (written by Brady Johnston). I found the default map too busy, and I wanted control over which genes were labelled and the colours used, so I modified the ggplot object that plasmapR returns. I'll be drawing a map for a single plasmid. You can download the plasmid sequence [here](https://github.com/sburgess2/blogs/tree/main/2026/2026-10-10-plasmidmap/data).
 
 The plasmid sequence originates from an *Escherichia coli* strain isolated from dairy cattle faeces. The plasmid was assembled using Flye and annotated using Prokka as described in [Burgess et al (2021)](https://doi.org/10.1016/j.idairyj.2021.104998).
 
@@ -28,17 +28,14 @@ First load the libraries we'll be using.
 ```{r}
 library(tidyverse)
 library(plasmapR)
-library(paletteer)
-library(RColorBrewer)
 ```
 
 ### Reading in the data
 
-Next read in the GenBank file into the plasmid object with `read_gb()`.
+Next read the GenBank file into the plasmid object with `read_gb()`.
 
 ```{r}
-#fl <- "2026/2026-10-10-plasmidmap/data/pEE072d2_CTX-M.gb"
-fl <- "2026/2026-10-10-plasmidmap/data/contig_3_v2.gb"
+fl <- "2026/2026-10-10-plasmidmap/data/pEE072d2.gb"
 plasmid <- fl |> read_gb()
 ```
 
@@ -57,40 +54,45 @@ head(df)
 
 ### Grouping the genes by predicted function
 
-This data frame three types of sequences. The source:
+This data frame contains three types of sequences. The source:
 
 ```{r}
 df |> filter(type == "source")
 ```
 
-The miscellaneous sequences:
+The miscellaneous features:
 
 ```{r}
 df |> filter(type == "misc_feature")
 ```
 
-The miscellaneous sequences:
-
-```{r}
-df |> filter(type == "cds")
-```
-
-I wanted to keep the origin of replication (Ori) and the IS903 insertion sequence on the map, so I kept the miscellaneous features as well as the coding sequences (CDS). The following only drops the source row.
+The coding sequences (CDS), showing the first ten rows:
 
 ```{r}
 df |>
-  filter_out(type == "source"))
+  filter(type == "CDS") |>
+  head(10)
 ```
 
-Next, we'll use `mutate()` and `case_when()` to add a column called `annotation`, which will group each gene by its predicted function (Plasmid mobilisation, Plasmid replication and partitioning, Plasmid transfer, Antimicrobial resistance, and Other), based on the gene name. `case_when()` works through the conditions in order and stops at the first match, so the order matters. The `str_detect` function is used to look for a pattern (in this case certain gene names) in a string (in this case the `name` column). Anything not matched, including the hypothetical proteins (e.g. EE0072d_05113), ends up as "Other".
+Many of the miscellaneous features overlap a CDS, which pushes the arrows off the ring, so I kept only the CDS.
 
 ```{r}
+#| eval: false
+
 df |>
-  filter(type %in% c("CDS", "misc_feature")) |>
+  filter(type == "CDS")
+```
+
+Next, we'll use `mutate()` and `case_when()` to add a column called `annotation`, which will group each gene by its predicted function (Mobilisation, ESBL, Plasmid replication and partitioning, Plasmid transfer, and Other), based on the gene name. `case_when()` works through the conditions in order and stops at the first match, so the order matters. The `str_detect()` function is used to look for a pattern (in this case certain gene names) in a string (in this case the `name` column). Anything not matched, including the hypothetical proteins (e.g. EE0072d_05113), ends up as "Other".
+
+```{r}
+#| eval: false
+
+df |>
   mutate(
     annotation = case_when(
       str_detect(name, "IS903") ~ "Mobilisation",
-      str_detect(name, "^bla") ~ "Antimicrobial resistance",
+      str_detect(name, "^bla") ~ "ESBL",
       str_detect(
         name,
         "^Ori$|^rep|^par"
@@ -98,73 +100,87 @@ df |>
       str_detect(name, "^tra|^trb|^finO") ~ "Plasmid transfer",
       TRUE ~ "Other"
     ),
-    name = str_replace(name, "bla_1", "blaCTX-M")
+    name = name |>
+      str_replace("bla_1", "blaCTX-M") |>
+      str_remove("_\\d{1,2}$") |>
+      str_remove(" .*$")
   )
 ```
 
-The *bla*~CTX-M~ gene is named *bla_1* in the annotation, so in the last line above I renamed it to *blaCTX-M* for the map label.
+The *bla*~CTX-M~ gene is named *bla_1* in the annotation, so in the last lines above I renamed it to *bla*~CTX-M~ for the map label. Prokka also adds a number to the end of repeated gene names (e.g. *traI_1*, *traI_2*), so `str_remove()` drops the underscore and the one or two digits that follow it.
 
-Finally, we need to select the columns `plot_plasmid()` expects, with the new function groups becoming the `type` column.
+The pattern `"_\\d{1,2}$"` is a regular expression, and it can be read piece by piece:
+
+- `_` matches an underscore.
+- `\\d` matches any digit (0 to 9). The backslash is doubled because a single backslash has a special meaning inside an R string.
+- `{1,2}` means one to two of the thing before it, so `\\d{1,2}` matches one or two digits.
+- `$` means the end of the string, so the match only happens when the underscore and digits are the last thing in the name.
+
+Put together, the pattern only matches an underscore followed by one or two digits at the very end of a name. This means *traI_1* becomes *traI*, but the locus tags (e.g. EE0072d_05113) are left alone, because they have five digits after the underscore.
+
+Some of the miscellaneous features also have long names, such as "traG (Yi 2010) hypothetical protein CDS". To keep just the gene name, the last `str_remove()` uses the pattern `" .*$"`:
+
+- The space at the start matches the first space in the name.
+- `.` matches any character.
+- `*` means zero or more of the thing before it, so `.*` matches any run of characters.
+- `$` means the end of the string.
+
+Together, the pattern matches everything from the first space to the end of the name, so "traG (Yi 2010) hypothetical protein CDS" becomes *traG*.
+
+Next, we need to select the columns `plot_plasmid()` expects:
 
 ```{r}
+#| eval: false
+
 df |>
   select(index, name, type = annotation, start, end, direction)
 ```
 
-I wanted all the genes to be visible on the map, so I kept the "Other" genes too. We also need to add a `mid` column (the midpoint of each gene), which is used later to position the gene labels.
+We also need to add a `mid` column (the midpoint of each gene), which is used later to position the gene labels.
 
 ```{r}
+#| eval: false
+
 df |>
   mutate(mid = (start + end) / 2)
 ```
 
-We can then chain the code above together and save it into a new object df1
+We can then chain the code above together and save it into a new object, `df1`.
+
 ```{r}
 df1 <- df |>
-  filter(type %in% c("CDS", "misc_feature")) |>
+  filter(type == "CDS") |>
   mutate(
     annotation = case_when(
-      str_detect(name, "IS903") ~ "Plasmid mobilisation",
-      str_detect(name, "^bla") ~ "ESBL/AmpC",
+      str_detect(name, "IS903") ~ "Mobilisation",
+      str_detect(name, "^bla") ~ "ESBL",
       str_detect(
         name,
         "^Ori$|^rep|^par"
       ) ~ "Plasmid replication and partitioning",
-      str_detect(name, "^relE|^pndA") ~ "Toxin-antitoxin",
       str_detect(name, "^tra|^trb|^finO") ~ "Plasmid transfer",
-      str_detect(name, "^eit") ~ "Iron uptake",
       TRUE ~ "Other"
     ),
-    name = str_replace(name, "bla_1", "blaCTX-M")
+    name = name |>
+      str_replace("bla_1", "blaCTX-M") |>
+      str_remove("_\\d{1,2}$") |>
+      str_remove(" .*$")
   ) |>
   select(index, name, type = annotation, start, end, direction) |>
   mutate(mid = (start + end) / 2)
 ```
 
-If you don't want all the genes to be displayed on the plasmid map you could filter them using:
+I wanted all the genes to be visible on the map, so I kept the "Other" genes. If you don't want them displayed on the plasmid map, you could filter them out using:
 
 ```{r}
+#| eval: false
+
+df1 |>
+  filter_out(type == "Other")
 ```
 
-### Choosing the colours
 
-Where I can I like to select colours that match/relevant to my topic. Given this plasmid contains an antimicrobial resistance gene I decided to use some of the colours used for AMR awareness week from these two images.
-
-I uploaded them into https://imagecolorpicker.com/ to get the hex codes for the two shades of blue and the black from the image and the orange from the second image and a light grey for the "Other" genes so they sit in the background.
-
-We'll use these colours to create a custom palette as follows:
-
-```{r}
-custom_colors <- c(
-  "Plasmid replication and partitioning" = "#cbe8f6",
-  "Plasmid transfer" = "#1898d5",
-  "Mobilisation" = "#010103",
-  "ESBL" = "#fe6f43",
-  "Other" = "#D9D9D9"
-)
-```
-
-### Building the plot
+### The layers of a plasmid plot
 
 `plot_plasmid()` returns a ggplot object. Here's the default map.
 
@@ -173,13 +189,13 @@ pl1 <- df1 |> plot_plasmid()
 pl1
 ```
 
-The default map labels every gene, which gets crowded. After a lot of playting around I realised that removing some of the layers was the key to getting the map into a format I liked more. The plot is built from layers, which are stored as a list in `pl1$layers`. 
+The default map labels every gene, which gets crowded. After a lot of playing around, I realised that removing some of the layers was the key to getting the map into a format I liked more. The plot is built from layers, which are stored as a list in `pl1$layers`.
 
 ```{r}
 pl1$layers
 ```
 
-There are five layers. Layer 1 draws the plasmid backbone (the ring), and layer 3 draws the gene arrows. These are the two layers I kept. Layers 2, 4, and 5 are the `geom_label_repel()` labels, the `geom_fit_text()` text, and the `annotate()` layer. To see what each layer adds, we'll remove them one at a time. Removing items from a list by position works the same way as removing items from a vector, using a minus sign in front of the position.
+There are five layers. Layer 1 draws the plasmid backbone (the ring), and layer 3 draws the gene arrows. These are the two layers I kept. Layers 2, 4, and 5 are the `geom_label_repel()` labels, the `geom_fit_text()` text, and the `annotate()` layer. To see what each layer adds, we'll remove them one at a time. 
 
 Removing only layer 1 drops the plasmid backbone, leaving the gene arrows and labels without the ring.
 
@@ -205,7 +221,7 @@ pl_no_arrows$layers <- pl_no_arrows$layers[-3]
 pl_no_arrows
 ```
 
-Removing only layer 4 drops the `geom_fit_text()` text, which fits the gene names inside the arrows.
+Removing only layer 4 drops the `geom_fit_text()` text, which fits some of the gene names inside the arrows (when the arrows are long enough).
 
 ```{r}
 pl_no_fit_text <- pl1
@@ -213,7 +229,7 @@ pl_no_fit_text$layers <- pl_no_fit_text$layers[-4]
 pl_no_fit_text
 ```
 
-Removing only layer 5 drops the `annotate()` layer, which adds text to the centre of the map.
+Removing only layer 5 drops the `annotate()` layer, which adds text to the centre of the map. If you want to keep the plasmid name and length of your plasmid then keep this layer in.
 
 ```{r}
 pl_no_annotate <- pl1
@@ -221,13 +237,36 @@ pl_no_annotate$layers <- pl_no_annotate$layers[-5]
 pl_no_annotate
 ```
 
-Now that we know what each layer does, we can remove all three from `pl1`.
+Now that we know what each layer does, we can remove the second, fourth and fifth layer from `pl1`.
 
 ```{r}
 pl1$layers <- pl1$layers[-c(2, 4, 5)]
 ```
 
-I didn't want the "Other" genes labelled. To do this, we'll add our own `geom_text()` layer using only the genes that aren't in the "Other" group, positioned at the midpoint of each gene and nudged out from the ring. `append(..., after = 0)` adds the new text layer as the first layer, so it is drawn underneath the gene arrows. Setting `inherit.aes = FALSE` stops the text layer picking up the aesthetics from the plasmapR layers.
+
+### Choosing the colours
+
+Where I can, I like to select colours that are relevant to my topic. Given this plasmid contains an antimicrobial resistance gene, I decided to use some of the colours from these two World Antimicrobial Resistance Awareness Week images.
+
+![](images/AMR-Poster.jpg){width="45%"} ![](images/amr-is-invisible-banner-en.jpg){width="50%"}
+
+I uploaded them into <https://imagecolorpicker.com/> to get the hex codes for the two shades of blue and the black from the first image, and the orange from the second image. I used a light grey for the "Other" genes so they're in the background.
+
+We'll use these colours to create a custom palette as follows:
+
+```{r}
+custom_colors <- c(
+  "Plasmid replication and partitioning" = "#cbe8f6",
+  "Plasmid transfer" = "#1898d5",
+  "Mobilisation" = "#010103",
+  "ESBL" = "#fe6f43",
+  "Other" = "#D9D9D9"
+)
+```
+
+### Building the final plasmid plot
+
+I didn't want the "Other" genes labelled. To do this, we'll add our own `geom_text()` layer that filters out the "Other" genes. Each label sits at the midpoint of its gene and is nudged out from the ring. `append(..., after = 0)` adds the new text layer as the first layer, so it is drawn underneath the gene arrows. Setting `inherit.aes = FALSE` stops the text layer picking up the aesthetics from the plasmapR layers.
 
 ```{r}
 pl1_modified <- pl1
@@ -235,7 +274,7 @@ pl1_modified$layers <- append(
   pl1_modified$layers,
   geom_text(
     data = df1 |>
-      filter(type != "Other"),
+      filter_out(type == "Other"),
     aes(x = mid, y = 3, label = name),
     inherit.aes = FALSE,
     size = 3,
@@ -250,7 +289,6 @@ pl1_modified$layers <- append(
 Finally, we'll add the custom colours, remove the background and axes with `theme_void()`, and rename the legend.
 
 ```{r}
-max_pos <- max(filtered_df$end)
 custom_plot <- pl1_modified +
   scale_fill_manual(values = custom_colors) +
   theme_void() +
@@ -259,44 +297,100 @@ custom_plot <- pl1_modified +
 custom_plot
 ```
 
-\<-- Add something here generally about using a function and patchwork for multiple maps --\>
+## Drawing maps for multiple plasmids
 
-## Saving the figure
-
-Finally, I saved the combined figure as an SVG, a PDF, and a PNG. The SVG was saved at 190 x 282.9 mm, while the PDF and PNG were saved at 200 x 150 mm (a width of 200 mm multiplied by `fig_ratio`, 12/16, for the height).
+If you have more than one plasmid, you can wrap the steps above in a function that takes the path to a GenBank file and returns the finished map. Get the map looking right for one plasmid first, then copy the code into the body of the function and replace the file path with the function argument.
 
 ```{r}
 #| eval: false
 
-fig_ratio <- 12 / 16
-height_ratio <- 282.9 / (180 * fig_ratio)
+make_plasmid_map <- function(fl) {
+  df1 <- fl |>
+    read_gb() |>
+    as.data.frame() |>
+    filter(type == "CDS") |>
+    mutate(
+      annotation = case_when(
+        str_detect(name, "IS903") ~ "Mobilisation",
+        str_detect(name, "^bla") ~ "ESBL",
+        str_detect(
+          name,
+          "^Ori$|^rep|^par"
+        ) ~ "Plasmid replication and partitioning",
+        str_detect(name, "^tra|^trb|^finO") ~ "Plasmid transfer",
+        TRUE ~ "Other"
+      ),
+      name = name |>
+        str_replace("bla_1", "blaCTX-M") |>
+        str_remove("_\\d{1,2}$") |>
+        str_remove(" .*$")
+    ) |>
+    select(index, name, type = annotation, start, end, direction) |>
+    mutate(mid = (start + end) / 2)
 
-ggsave(
-  plot = combined_plot,
-  filename = "figures/plasmid_map.svg",
-  dpi = 1000,
-  width = 190,
-  height = 282.9,
-  units = "mm"
+  pl <- df1 |> plot_plasmid()
+  pl$layers <- pl$layers[-c(2, 4, 5)]
+  pl$layers <- append(
+    pl$layers,
+    geom_text(
+      data = df1 |>
+        filter_out(type == "Other"),
+      aes(x = mid, y = 3, label = name),
+      inherit.aes = FALSE,
+      size = 3,
+      color = "black",
+      nudge_y = 0.5,
+      show.legend = FALSE
+    ),
+    after = 0
+  )
+
+  pl +
+    scale_fill_manual(values = custom_colors) +
+    theme_void() +
+    labs(fill = "Predicted function")
+}
+```
+
+You can then use `map()` from purrr to run the function over a vector of file paths, which returns a list of maps.
+
+```{r}
+#| eval: false
+
+files <- c(
+  "2026/2026-10-10-plasmidmap/data/plasmid_a.gb",
+  "2026/2026-10-10-plasmidmap/data/plasmid_b.gb"
 )
 
-ggsave(
-  plot = combined_plot,
-  filename = "figures/plasmid_map.pdf",
-  device = "pdf",
-  dpi = 1000,
-  width = 200,
-  height = 200 * fig_ratio,
-  units = "mm"
-)
+maps <- files |> map(make_plasmid_map)
+```
+
+To put the maps side by side, the patchwork package combines ggplot objects into a single figure. `wrap_plots()` takes a list of plots, and `plot_layout(guides = "collect")` keeps a single shared legend rather than one per map.
+
+```{r}
+#| eval: false
+
+library(patchwork)
+
+wrap_plots(maps) +
+  plot_layout(guides = "collect")
+```
+
+For two maps, you can also add them together directly with `maps[[1]] + maps[[2]]`.
+
+## Saving the figure
+
+Finally, I saved the map as a PNG sized to a quarter of an A4 page (A6), which is 148 x 105 mm in landscape. The landscape orientation leaves room for the legend beside the map.
+
+```{r}
+#| eval: false
 
 ggsave(
-  plot = combined_plot,
-  filename = "figures/plasmid_map.png",
-  device = "png",
+  plot = custom_plot,
+  filename = "2026/2026-10-10-plasmidmap/output/plasmid_map.png",
   dpi = 1000,
-  width = 200,
-  height = 200 * fig_ratio,
+  width = 148,
+  height = 105,
   units = "mm"
 )
 ```
@@ -305,5 +399,5 @@ ggsave(
 
 - `plot_plasmid()` returns a ggplot object, so you can remove, reorder, or add layers (`pl1$layers`) and change layer parameters directly when the defaults don't quite fit.
 - The order of the conditions in `case_when()` matters. Put the most specific groups first.
-- Get the map right for one plasmid before wrapping the code in a function. Returning a list from the function means you can pull out other information (like the AMR gene counts) at the same time as the plots.
-- Much of the work happens before R. Check your annotations (e.g. against the ResFinder output) before you draw the map.
+- Get the map right for one plasmid before wrapping the code in a function. 
+- A lot of the work happens before R. Check your annotations (e.g. against the ResFinder output) before you draw the map.
