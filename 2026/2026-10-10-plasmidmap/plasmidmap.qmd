@@ -28,7 +28,6 @@ First load the libraries we'll be using.
 ```{r}
 library(tidyverse)
 library(plasmapR)
-library(ggrepel)
 ```
 
 ### Reading in the data
@@ -256,13 +255,13 @@ custom_colors <- c(
 
 ### Building the final plasmid plot
 
-I only wanted the ESBL and plasmid transfer genes labelled. To do this, we'll add our own `geom_text_repel()` layer from the ggrepel package that keeps just those two groups. Each label starts at the midpoint of its gene and is nudged out from the ring, and `geom_text_repel()` pushes overlapping labels apart. Setting `min.segment.length = Inf` stops it drawing lines from the labels to the genes. `append(..., after = 0)` adds the new text layer as the first layer, so it is drawn underneath the gene arrows. Setting `inherit.aes = FALSE` stops the text layer picking up the aesthetics from the plasmapR layers.
+I only wanted the ESBL and plasmid transfer genes labelled. To do this, we'll add our own `geom_text()` layer that keeps just those two groups. Each label sits at the midpoint of its gene and is nudged out from the ring. `append(..., after = 0)` adds the new text layer as the first layer, so it is drawn underneath the gene arrows. Setting `inherit.aes = FALSE` stops the text layer picking up the aesthetics from the plasmapR layers.
 
 ```{r}
 pl1_modified <- pl1
 pl1_modified$layers <- append(
   pl1_modified$layers,
-  geom_text_repel(
+  geom_text(
     data = df1 |>
       filter(type %in% c("ESBL", "Plasmid transfer")),
     aes(x = mid, y = 3, label = name),
@@ -270,7 +269,6 @@ pl1_modified$layers <- append(
     size = 3,
     color = "black",
     nudge_y = 0.7,
-    min.segment.length = Inf,
     show.legend = FALSE
   ),
   after = 0
@@ -324,7 +322,7 @@ make_plasmid_map <- function(fl) {
   pl$layers <- pl$layers[-c(2, 4, 5)]
   pl$layers <- append(
     pl$layers,
-    geom_text_repel(
+    geom_text(
       data = df1 |>
         filter(type %in% c("ESBL", "Plasmid transfer")),
       aes(x = mid, y = 3, label = name),
@@ -332,7 +330,6 @@ make_plasmid_map <- function(fl) {
       size = 3,
       color = "black",
       nudge_y = 0.7,
-      min.segment.length = Inf,
       show.legend = FALSE
     ),
     after = 0
