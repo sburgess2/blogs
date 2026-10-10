@@ -9,9 +9,9 @@ execute:
   message: false
 ---
 
-In this blog I'll run through how I drew plasmid maps in R using the [plasmapR package](https://bradyajohnston.github.io/plasmapR/) (written by Brady Johnston). I found the default map too busy, and I wanted control over which genes were labelled and the colours used, so I modified the ggplot object that plasmapR returns. I'll be drawing a map for a single plasmid. You can download the plasmid sequence [here](https://github.com/sburgess2/blogs/tree/main/2026/2026-10-10-plasmidmap/data).
+As well as working in data visualisation, I'm also a researcher at Massey University. Most of my research focuses on understanding the sources and transmission pathways of antibiotic resistant bacteria such as \*Escherichia coli\*. I recently discovered a tool for drawing plasmid maps in R. This blog is mainly for people who work with plasmid sequence data. I'll run through how I drew plasmid maps in R using the [plasmapR package](https://bradyajohnston.github.io/plasmapR/) (written by Brady Johnston). I found the default map too busy, and I wanted control over which genes were labelled and the colours used, so I modified the ggplot object that plasmapR returns. I'll start by drawing a map for a single plasmid, then show how to draw maps for multiple plasmids. You can download the plasmid sequence [here](https://github.com/sburgess2/blogs/tree/main/2026/2026-10-10-plasmidmap/data).
 
-The plasmid sequence originates from an *Escherichia coli* strain isolated from dairy cattle faeces. The plasmid was assembled using Flye and annotated using Prokka as described in [Burgess et al (2021)](https://doi.org/10.1016/j.idairyj.2021.104998).
+The plasmid sequence originates from an *Escherichia coli* strain isolated from dairy cattle faeces. The plasmid was assembled using Flye and annotated using Prokka as described in [Burgess et al. (2021)](https://doi.org/10.1016/j.idairyj.2021.104998).
 
 ## Packages
 
@@ -55,7 +55,7 @@ head(df)
 
 ### Grouping the genes by category
 
-This data frame contains three types of sequences. The source:
+This data frame contains three types of features. The source:
 
 ```{r}
 df |> filter(type == "source")
@@ -104,7 +104,7 @@ df |>
   )
 ```
 
-The *bla*~CTX-M~ gene is named *bla_1* in the annotation, so in line 12 above I renamed it to *bla*~CTX-M~ for the map label. Prokka also adds a number to the end of repeated gene names (e.g. *traI_1*, *traI_2*), so `str_remove()` drops the underscore and the one or two digits that follow it.
+The *bla*~CTX-M~ gene is named *bla_1* in the annotation, so I used `str_replace()` to rename it to *bla*~CTX-M~ for the map label. Prokka also adds a number to the end of repeated gene names (e.g. *traI_1*, *traI_2*), so `str_remove()` drops the underscore and the one or two digits that follow it.
 
 The pattern `"_\\d{1,2}$"` is a regular expression (regex), and it can be read piece by piece:
 
@@ -231,7 +231,7 @@ pl_no_annotate$layers <- pl_no_annotate$layers[-5]
 pl_no_annotate
 ```
 
-Now that we know what each layer does, we can remove the second, fourth and fifth layer from `pl1`.
+Now that we know what each layer does, we can remove the second, fourth, and fifth layers from `pl1`.
 
 ```{r}
 pl1$layers <- pl1$layers[-c(2, 4, 5)]
@@ -243,7 +243,9 @@ Where I can, I like to select colours that are relevant to my topic. Given this 
 
 ![](images/AMR-Poster.jpg){width="45%"} ![](images/amr-is-invisible-banner-en.jpg){width="50%"}
 
-I uploaded them into <https://imagecolorpicker.com/> to get the hex codes for the two shades of blue from the first image, and the orange from the second image. I used the light blue for the "Other" genes and a light grey for the hypothetical proteins so they're in the background.
+\[Missing: source and credit for the two images\]
+
+I uploaded them to <https://imagecolorpicker.com/> to get the hex codes for the two shades of blue from the first image, and the orange from the second image. I used the light blue for the "Other" genes and a light grey for the hypothetical proteins so they're in the background.
 
 We'll use these colours to create a custom palette as follows:
 
@@ -295,9 +297,11 @@ custom_plot <- pl1_modified +
 custom_plot
 ```
 
+Any further manipulation (e.g. lining up some of the gene names with the genes a bit better) I do in Inkscape.
+
 ## Drawing maps for multiple plasmids
 
-If you have more than one plasmid, you can wrap the steps above in a function. In the example below, `make_plasmid_map()` has one argument, `fl`, which is the file path to a GenBank file. Get the map looking right for one plasmid first, then copy the code into the body of the function.
+If you have more than one plasmid, you can wrap the steps above in a function. In the example below, `make_plasmid_map()` has one argument, `fl`, which is the file path to a GenBank file. It's best to get the map looking right for one plasmid first, then copy the code into the body of the function.
 
 ```{r}
 #| eval: false
@@ -342,24 +346,23 @@ make_plasmid_map <- function(fl) {
 
   pl +
     scale_fill_manual(values = custom_colors) +
-    ylim(2, NA) +
     theme_void() +
     theme(legend.position = "top") +
     labs(fill = "Gene category")
 }
 ```
 
-Rather than typing out each file path, `list.files()` finds every GenBank file in a folder. `pattern = "\\.gbff$"` keeps only files ending in .gbff, and `full.names = TRUE` returns the full path rather than just the file name. You can then use `map()` from purrr to run the function over the file paths, which returns a list of maps.
+Rather than typing out each file path, we can use `list.files()` to find every GenBank file in a folder. `pattern = "\\.gb$"` keeps only files ending in .gb(if your files end in .gb, like the example plasmid, use `"\\.gb$"` instead), and `full.names = TRUE` returns the full path rather than just the file name. You can then use `map()` from purrr to run the function over the file paths, which returns a list of maps.
 
 ```{r}
 #| eval: false
 
-gb_files <- list.files("data/plasmids/", pattern = "\\.gbff$", full.names = TRUE)
+gb_files <- list.files("data/plasmids/", pattern = "\\.gb$", full.names = TRUE)
 
 maps <- gb_files |> map(make_plasmid_map)
 ```
 
-To put the maps side by side, the patchwork package combines ggplot objects into a single figure. `wrap_plots()` takes a list of plots, and `plot_layout(guides = "collect")` keeps a single shared legend rather than one per map.
+To put the maps side by side, we can use the patchwork package, which combines ggplot objects into a single figure. `wrap_plots()` takes a list of plots, and `plot_layout(guides = "collect")` keeps a single shared legend rather than one per map.
 
 ```{r}
 #| eval: false
@@ -374,17 +377,22 @@ For two maps, you can also add them together directly with `maps[[1]] + maps[[2]
 
 ## Saving the figure
 
-Finally, you can save the map as a PNG.
+Finally, you can save the map as an SVG, so you can make further changes in a vector graphics editor such as Inkscape. To save as an SVG, `ggsave()` needs the svglite package, so install it first if you don't already have it.
+
+```{r}
+#| eval: false
+
+install.packages("svglite")
+```
 
 ```{r}
 #| eval: false
 
 ggsave(
   plot = custom_plot,
-  filename = "2026/2026-10-10-plasmidmap/output/plasmid_map.png",
-  dpi = 300,
-  width = 148,
-  height = 105,
+  filename = "2026/2026-10-10-plasmidmap/output/plasmid_map.svg",
+  width = 210,
+  height = 148,
   units = "mm"
 )
 ```
@@ -392,6 +400,7 @@ ggsave(
 ## Key tips
 
 - `plot_plasmid()` returns a ggplot object, so you can remove, reorder, or add layers (`pl1$layers`) and change layer parameters directly when the defaults don't quite fit.
-- The order of the conditions in `case_when()` matters. Put the most specific groups first.
-- Get the map right for one plasmid before wrapping the code in a function.
-- A lot of the work happens before R. Check your annotations (e.g. against the ResFinder output) before you draw the map.
+
+- The order of the conditions in `case_when()` matters. The most specific groups should go first.
+
+- It's easier to get the map right for one plasmid before wrapping the code in a function.
